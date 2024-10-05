@@ -4,6 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const scanForm = document.getElementById('scan-form');
     const barcodeInput = document.getElementById('barcode-input');
     const scanResult = document.getElementById('scan-result');
+    const employeeIdInput = document.getElementById('employee-id');
+    const barcodeInputCheckIn = document.getElementById('barcode');
+
+    // Focus on Employee ID input when the page loads
+    if (employeeIdInput) {
+        employeeIdInput.focus();
+    }
 
     if (scanForm) {
         scanForm.addEventListener('submit', function(e) {
@@ -21,10 +28,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const scannedValue = this.value.trim();
                 if (scannedValue.startsWith('E')) {
-                    document.getElementById('employee-id').value = scannedValue;
-                    document.getElementById('employee-id-out').value = scannedValue;
+                    employeeIdInput.value = scannedValue;
+                    barcodeInputCheckIn.focus();
                 } else {
-                    document.getElementById('barcode').value = scannedValue;
+                    barcodeInputCheckIn.value = scannedValue;
+                    employeeIdInput.focus();
                 }
                 this.value = '';
             }
@@ -34,8 +42,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkInForm) {
         checkInForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const employeeId = document.getElementById('employee-id').value;
-            const barcode = document.getElementById('barcode').value;
+            const employeeId = employeeIdInput.value;
+            const barcode = barcodeInputCheckIn.value;
             checkIn(employeeId, barcode);
         });
     }
@@ -81,6 +89,7 @@ function checkIn(employeeId, barcode) {
         alert(data.message);
         document.getElementById('employee-id').value = ''; // Clear employee ID input
         document.getElementById('barcode').value = ''; // Clear barcode input
+        document.getElementById('employee-id').focus(); // Refocus on Employee ID input
     })
     .catch((error) => {
         console.error('Error:', error);
