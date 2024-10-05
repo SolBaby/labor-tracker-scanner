@@ -27,12 +27,12 @@ def init_routes(app):
     def edit_report():
         data = request.json
         time_log_id = data['id']
+        total_hours = int(data['total_hours'])
         total_minutes = int(data['total_minutes'])
-        total_seconds = int(data['total_seconds'])
 
         time_log = TimeLog.query.get(time_log_id)
         if time_log:
-            new_duration = timedelta(minutes=total_minutes, seconds=total_seconds)
+            new_duration = timedelta(hours=total_hours, minutes=total_minutes)
             time_log.update_duration(new_duration)
             try:
                 db.session.commit()
@@ -49,8 +49,8 @@ def init_routes(app):
             Employee.name.label('employee_name'),
             Task.name.label('task_name'),
             Task.location.label('task_location'),
-            func.sum(func.extract('epoch', TimeLog.duration) / 60).label('total_minutes'),
-            func.sum(func.extract('epoch', TimeLog.duration) % 60).label('total_seconds')
+            func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
+            func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id).all()
 
         return jsonify([
@@ -59,8 +59,8 @@ def init_routes(app):
                 'employee_name': record.employee_name,
                 'task_name': record.task_name,
                 'task_location': record.task_location,
-                'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0,
-                'total_seconds': int(record.total_seconds) if record.total_seconds is not None else 0
+                'total_hours': int(record.total_hours) if record.total_hours is not None else 0,
+                'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0
             }
             for record in employee_hours
         ])

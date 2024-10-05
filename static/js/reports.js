@@ -10,9 +10,9 @@ function updateReports() {
                     <td>${record.employee_name}</td>
                     <td>${record.task_name}</td>
                     <td>${record.task_location}</td>
-                    <td>${record.total_minutes} minutes, ${record.total_seconds} seconds</td>
+                    <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
                     <td>
-                        <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_minutes}, ${record.total_seconds})">Edit</button>
+                        <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_hours}, ${record.total_minutes})">Edit</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -21,28 +21,27 @@ function updateReports() {
         .catch(error => console.error('Error:', error));
 }
 
-function editReport(id, employeeName, taskName, taskLocation, totalMinutes, totalSeconds) {
-    // Populate and show edit modal
+function editReport(id, employeeName, taskName, taskLocation, totalHours, totalMinutes) {
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-employee-name').value = employeeName;
     document.getElementById('edit-task-name').value = taskName;
     document.getElementById('edit-task-location').value = taskLocation;
+    document.getElementById('edit-total-hours').value = totalHours;
     document.getElementById('edit-total-minutes').value = totalMinutes;
-    document.getElementById('edit-total-seconds').value = totalSeconds;
     document.getElementById('edit-modal').style.display = 'block';
 }
 
 function saveEdit() {
     const id = document.getElementById('edit-id').value;
+    const totalHours = document.getElementById('edit-total-hours').value;
     const totalMinutes = document.getElementById('edit-total-minutes').value;
-    const totalSeconds = document.getElementById('edit-total-seconds').value;
 
     fetch('/api/reports/edit', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id, total_minutes: totalMinutes, total_seconds: totalSeconds }),
+        body: JSON.stringify({ id, total_hours: totalHours, total_minutes: totalMinutes }),
     })
     .then(response => response.json())
     .then(data => {
