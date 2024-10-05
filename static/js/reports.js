@@ -1,5 +1,8 @@
+let currentSort = { field: null, order: null };
+
 function updateReports() {
-    fetch('/api/reports/data')
+    const sortParams = currentSort.field ? `sort_field=${currentSort.field}&sort_order=${currentSort.order}` : '';
+    fetch(`/api/reports/data?${sortParams}`)
         .then(response => response.json())
         .then(data => {
             const tbody = document.querySelector('table tbody');
@@ -71,6 +74,18 @@ document.addEventListener('DOMContentLoaded', function() {
     editForm.addEventListener('submit', function(e) {
         e.preventDefault();
         saveEdit();
+    });
+
+    document.querySelector('table thead').addEventListener('click', function(e) {
+        if (e.target.classList.contains('sortable')) {
+            const field = e.target.dataset.sort;
+            if (currentSort.field === field) {
+                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { field, order: 'asc' };
+            }
+            updateReports();
+        }
     });
 
     // Update reports every 30 seconds

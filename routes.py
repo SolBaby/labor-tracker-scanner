@@ -44,14 +44,27 @@ def init_routes(app):
 
     @app.route('/api/reports/data')
     def reports_data():
-        employee_hours = db.session.query(
+        sort_field = request.args.get('sort_field', 'employee_name')
+        sort_order = request.args.get('sort_order', 'asc')
+
+        query = db.session.query(
             TimeLog.id.label('id'),
             Employee.name.label('employee_name'),
             Task.name.label('task_name'),
             Task.location.label('task_location'),
             func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
-        ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id).all()
+        ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id)
+
+        if sort_field == 'total_time':
+            sort_expr = (func.sum(func.extract('epoch', TimeLog.duration) / 3600) * 60 +
+                         func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60))
+        else:
+            sort_expr = getattr(Employee if sort_field == 'employee_name' else Task, sort_field)
+
+        query = query.order_by(sort_expr.desc() if sort_order == 'desc' else sort_expr)
+
+        employee_hours = query.all()
 
         return jsonify([
             {
