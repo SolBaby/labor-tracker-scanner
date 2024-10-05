@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to Labor Tracking System</h1>
+
+<div id="barcode-scanner">
+    <div id="loadingMessage">🎥 Unable to access video stream (please make sure you have a webcam enabled)</div>
+    <canvas id="canvas" hidden></canvas>
+    <div id="output" hidden>
+        <div id="outputMessage">No QR code detected.</div>
+        <div hidden><b>Data:</b> <span id="outputData"></span></div>
+    </div>
+</div>
+
+<form id="check-in-form">
+    <h2>Employee Check-In</h2>
+    <input type="text" id="employee-id" placeholder="Employee ID" required>
+    <input type="text" id="task-id" placeholder="Task ID" required>
+    <button type="submit" class="btn">Check In</button>
+</form>
+
+<form id="check-out-form">
+    <h2>Employee Check-Out</h2>
+    <input type="text" id="employee-id-out" placeholder="Employee ID" required>
+    <button type="submit" class="btn">Check Out</button>
+</form>
+{% endblock %}

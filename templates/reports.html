@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Reports</h1>
+
+<h2>Employee Hours</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Employee Name</th>
+            <th>Total Hours</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, hours in employee_hours %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ hours }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Task Hours</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Task Name</th>
+            <th>Total Hours</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, hours in task_hours %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ hours }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
