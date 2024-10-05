@@ -194,14 +194,12 @@ def init_routes(app):
 
         active_time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
         if active_time_log:
-            # Check out
             active_time_log.end_time = datetime.utcnow()
             active_time_log.duration = active_time_log.end_time - active_time_log.start_time
             active_time_log.status = 'checked_out'
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked out successfully'})
         else:
-            # Check in
             return jsonify({'status': 'success', 'message': f'Employee {employee.name} scanned. Please scan a task barcode to check in.'})
 
     def handle_task_scan(barcode):
@@ -214,15 +212,48 @@ def init_routes(app):
             return jsonify({'status': 'error', 'message': 'No active employee check-in found. Please scan an employee ID first.'})
 
         if active_time_log.task_id == task.id:
-            # Stop task
             active_time_log.end_time = datetime.utcnow()
             active_time_log.duration = active_time_log.end_time - active_time_log.start_time
             active_time_log.status = 'checked_out'
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Task {task.name} stopped successfully'})
         else:
-            # Start new task
             new_time_log = TimeLog(employee_id=active_time_log.employee_id, task_id=task.id, status='checked_in')
             db.session.add(new_time_log)
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Task {task.name} started successfully'})
+
+    @app.route('/dashboard')
+    def dashboard():
+        active_employees = Employee.query.join(TimeLog).filter(TimeLog.end_time.is_(None)).count()
+        completed_tasks = TimeLog.query.filter(TimeLog.end_time.isnot(None)).count()
+        avg_task_duration = db.session.query(func.avg(TimeLog.duration)).filter(TimeLog.end_time.isnot(None)).scalar()
+        
+        top_employees = db.session.query(
+            Employee.name,
+            func.sum(TimeLog.duration).label('total_duration')
+        ).join(TimeLog).group_by(Employee.id).order_by(desc('total_duration')).limit(5).all()
+
+        return render_template('dashboard.html', 
+                               active_employees=active_employees,
+                               completed_tasks=completed_tasks,
+                               avg_task_duration=avg_task_duration,
+                               top_employees=top_employees)
+
+    @app.route('/api/dashboard/data')
+    def dashboard_data():
+        active_employees = Employee.query.join(TimeLog).filter(TimeLog.end_time.is_(None)).count()
+        completed_tasks = TimeLog.query.filter(TimeLog.end_time.isnot(None)).count()
+        avg_task_duration = db.session.query(func.avg(TimeLog.duration)).filter(TimeLog.end_time.isnot(None)).scalar()
+        
+        top_employees = db.session.query(
+            Employee.name,
+            func.sum(TimeLog.duration).label('total_duration')
+        ).join(TimeLog).group_by(Employee.id).order_by(desc('total_duration')).limit(5).all()
+
+        return jsonify({
+            'active_employees': active_employees,
+            'completed_tasks': completed_tasks,
+            'avg_task_duration': str(avg_task_duration) if avg_task_duration else None,
+            'top_employees': [{'name': e.name, 'duration': str(e.total_duration)} for e in top_employees]
+        })
