@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const barcodeInput = document.getElementById('barcode-input');
     const scanResult = document.getElementById('scan-result');
     const employeeIdInput = document.getElementById('employee-id');
-    const barcodeInputCheckIn = document.getElementById('barcode');
+    const taskBarcodeInput = document.getElementById('task-barcode');
 
     // Focus on Employee ID input when the page loads
     if (employeeIdInput) {
@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const scannedValue = this.value.trim();
                 if (scannedValue.startsWith('E')) {
                     employeeIdInput.value = scannedValue;
-                    barcodeInputCheckIn.focus();
+                    taskBarcodeInput.focus();
                 } else {
-                    barcodeInputCheckIn.value = scannedValue;
+                    taskBarcodeInput.value = scannedValue;
                     employeeIdInput.focus();
                 }
                 this.value = '';
@@ -43,8 +43,8 @@ document.addEventListener('DOMContentLoaded', function() {
         checkInForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const employeeId = employeeIdInput.value;
-            const barcode = barcodeInputCheckIn.value;
-            checkIn(employeeId, barcode);
+            const taskBarcode = taskBarcodeInput.value;
+            checkIn(employeeId, taskBarcode);
         });
     }
 
@@ -76,19 +76,19 @@ function sendScanToServer(scannedValue) {
     });
 }
 
-function checkIn(employeeId, barcode) {
+function checkIn(employeeId, taskBarcode) {
     fetch('/api/employee/check_in', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ employee_id: employeeId, barcode: barcode }),
+        body: JSON.stringify({ employee_id: employeeId, task_barcode: taskBarcode }),
     })
     .then(response => response.json())
     .then(data => {
         alert(data.message);
         document.getElementById('employee-id').value = ''; // Clear employee ID input
-        document.getElementById('barcode').value = ''; // Clear barcode input
+        document.getElementById('task-barcode').value = ''; // Clear task barcode input
         document.getElementById('employee-id').focus(); // Refocus on Employee ID input
     })
     .catch((error) => {

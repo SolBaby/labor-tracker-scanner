@@ -44,7 +44,7 @@ def init_routes(app):
 
     @app.route('/api/reports/data')
     def reports_data():
-        sort_field = request.args.get('sort_field', 'employee_name')
+        sort_field = request.args.get('sort_field', 'employee.name')
         sort_order = request.args.get('sort_order', 'asc')
 
         query = db.session.query(
@@ -59,8 +59,12 @@ def init_routes(app):
         if sort_field == 'total_time':
             sort_expr = (func.sum(func.extract('epoch', TimeLog.duration) / 3600) * 60 +
                          func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60))
+        elif sort_field == 'employee_name':
+            sort_expr = Employee.name
+        elif sort_field == 'task_name':
+            sort_expr = Task.name
         else:
-            sort_expr = getattr(Employee if sort_field == 'employee_name' else Task, sort_field)
+            sort_expr = getattr(Task, sort_field)
 
         query = query.order_by(sort_expr.desc() if sort_order == 'desc' else sort_expr)
 
@@ -81,39 +85,5 @@ def init_routes(app):
     @app.route('/analytics')
     def analytics_dashboard():
         return render_template('analytics.html')
-
-    @app.route('/api/analytics/productivity')
-    def productivity_analytics():
-        productivity_data = db.session.query(
-            Employee.name.label('employee_name'),
-            func.avg(func.extract('epoch', TimeLog.duration) / 60).label('avg_task_duration'),
-            func.count(TimeLog.id).label('completed_tasks')
-        ).join(TimeLog).filter(TimeLog.status == 'checked_out').group_by(Employee.id).all()
-
-        return jsonify([
-            {
-                'employee_name': record.employee_name,
-                'avg_task_duration': float(record.avg_task_duration) if record.avg_task_duration is not None else 0,
-                'completed_tasks': int(record.completed_tasks)
-            }
-            for record in productivity_data
-        ])
-
-    @app.route('/api/analytics/task_completion')
-    def task_completion_analytics():
-        task_completion_data = db.session.query(
-            Task.name.label('task_name'),
-            func.count(TimeLog.id).label('completion_count'),
-            func.avg(func.extract('epoch', TimeLog.duration) / 60).label('avg_duration')
-        ).join(TimeLog).filter(TimeLog.status == 'checked_out').group_by(Task.id).all()
-
-        return jsonify([
-            {
-                'task_name': record.task_name,
-                'completion_count': int(record.completion_count),
-                'avg_duration': float(record.avg_duration) if record.avg_duration is not None else 0
-            }
-            for record in task_completion_data
-        ])
 
     return app
