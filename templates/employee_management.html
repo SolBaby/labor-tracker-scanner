@@ -3,22 +3,42 @@
 {% block content %}
 <h1>Employee Management</h1>
 
+<form id="add-employee-form">
+    <h2>Add New Employee</h2>
+    <input type="text" id="new-employee-name" placeholder="Employee Name" required>
+    <input type="text" id="new-employee-id" placeholder="Employee ID" required>
+    <button type="submit" class="btn">Add Employee</button>
+</form>
+
 <table>
     <thead>
         <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Employee ID</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for employee in employees %}
         <tr>
             <td>{{ employee.id }}</td>
-            <td>{{ employee.name }}</td>
+            <td>
+                <span class="employee-name">{{ employee.name }}</span>
+                <input type="text" class="edit-employee-name" value="{{ employee.name }}" style="display: none;">
+            </td>
             <td>{{ employee.employee_id }}</td>
+            <td>
+                <button class="btn edit-btn" data-id="{{ employee.id }}">Edit</button>
+                <button class="btn save-btn" data-id="{{ employee.id }}" style="display: none;">Save</button>
+                <button class="btn delete-btn" data-id="{{ employee.id }}">Delete</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/employee_management.js') }}"></script>
 {% endblock %}

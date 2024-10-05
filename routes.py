@@ -18,6 +18,45 @@ def task_management():
     tasks = Task.query.all()
     return render_template('task_management.html', tasks=tasks)
 
+@app.route('/api/employee/add', methods=['POST'])
+def add_employee():
+    data = request.json
+    new_employee = Employee(name=data['name'], employee_id=data['employee_id'])
+    db.session.add(new_employee)
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Employee added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/employee/update/<int:id>', methods=['PUT'])
+def update_employee(id):
+    data = request.json
+    employee = Employee.query.get(id)
+    if employee:
+        employee.name = data['name']
+        try:
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Employee updated successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+    return jsonify({'status': 'error', 'message': 'Employee not found'})
+
+@app.route('/api/employee/delete/<int:id>', methods=['DELETE'])
+def delete_employee(id):
+    employee = Employee.query.get(id)
+    if employee:
+        db.session.delete(employee)
+        try:
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Employee deleted successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
+    return jsonify({'status': 'error', 'message': 'Employee not found'})
+
 @app.route('/api/employee/check_in', methods=['POST'])
 def employee_check_in():
     data = request.json
