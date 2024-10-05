@@ -23,6 +23,28 @@ def init_routes(app):
     def reports():
         return render_template('reports.html')
 
+    @app.route('/api/employee/check_in', methods=['POST'])
+    def employee_check_in():
+        data = request.json
+        employee_id = data.get('employee_id')
+        task_barcode = data.get('task_barcode')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        task = Task.query.filter_by(barcode=task_barcode).first()
+        
+        if not employee or not task:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID or task barcode'}), 400
+        
+        time_log = TimeLog(employee_id=employee.id, task_id=task.id, status='checked_in')
+        db.session.add(time_log)
+        
+        try:
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Check-in successful'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/reports/edit', methods=['POST'])
     def edit_report():
         data = request.json
@@ -52,6 +74,7 @@ def init_routes(app):
             Employee.name.label('employee_name'),
             Task.name.label('task_name'),
             Task.location.label('task_location'),
+            TimeLog.start_time.label('check_in_time'),
             func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id)
@@ -63,6 +86,8 @@ def init_routes(app):
             sort_expr = Employee.name
         elif sort_field == 'task_name':
             sort_expr = Task.name
+        elif sort_field == 'check_in_time':
+            sort_expr = TimeLog.start_time
         else:
             sort_expr = getattr(Task, sort_field)
 
@@ -76,6 +101,7 @@ def init_routes(app):
                 'employee_name': record.employee_name,
                 'task_name': record.task_name,
                 'task_location': record.task_location,
+                'check_in_time': record.check_in_time.isoformat() if record.check_in_time else None,
                 'total_hours': int(record.total_hours) if record.total_hours is not None else 0,
                 'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0
             }

@@ -13,6 +13,7 @@ function updateReports() {
                     <td>${record.employee_name}</td>
                     <td>${record.task_name}</td>
                     <td>${record.task_location}</td>
+                    <td>${record.check_in_time ? new Date(record.check_in_time).toLocaleString() : 'N/A'}</td>
                     <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
                     <td>
                         <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_hours}, ${record.total_minutes})">Edit</button>

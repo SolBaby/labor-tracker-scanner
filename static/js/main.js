@@ -86,13 +86,18 @@ function checkIn(employeeId, taskBarcode) {
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
-        document.getElementById('employee-id').value = ''; // Clear employee ID input
-        document.getElementById('task-barcode').value = ''; // Clear task barcode input
-        document.getElementById('employee-id').focus(); // Refocus on Employee ID input
+        if (data.status === 'success') {
+            alert(data.message);
+            document.getElementById('employee-id').value = '';
+            document.getElementById('task-barcode').value = '';
+            document.getElementById('employee-id').focus();
+        } else {
+            alert(data.message);
+        }
     })
     .catch((error) => {
         console.error('Error:', error);
+        alert('An error occurred during check-in. Please try again.');
     });
 }
 
