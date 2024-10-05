@@ -117,6 +117,7 @@ def init_routes(app):
             Task.name.label('task_name'),
             Task.location.label('task_location'),
             TimeLog.start_time.label('check_in_time'),
+            TimeLog.end_time.label('check_out_time'),  # Add this line
             func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id)
@@ -132,6 +133,8 @@ def init_routes(app):
             sort_expr = Task.location
         elif sort_field == 'check_in_time':
             sort_expr = TimeLog.start_time
+        elif sort_field == 'check_out_time':
+            sort_expr = TimeLog.end_time
         else:
             sort_expr = Employee.name  # Default sort
 
@@ -146,6 +149,7 @@ def init_routes(app):
                 'task_name': record.task_name,
                 'task_location': record.task_location,
                 'check_in_time': record.check_in_time.isoformat() if record.check_in_time else None,
+                'check_out_time': record.check_out_time.isoformat() if record.check_out_time else None,  # Add this line
                 'total_hours': int(record.total_hours) if record.total_hours is not None else 0,
                 'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0
             }
