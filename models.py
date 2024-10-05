@@ -24,6 +24,8 @@ class TimeLog(db.Model):
     end_time = db.Column(db.DateTime)
     duration = db.Column(db.Interval)
     status = db.Column(db.String(20), nullable=False, default='checked_in')
+    lunch_break_start = db.Column(db.DateTime)
+    lunch_break_end = db.Column(db.DateTime)
 
     def update_duration(self, new_duration):
         if isinstance(new_duration, timedelta):

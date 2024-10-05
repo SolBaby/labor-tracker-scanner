@@ -117,7 +117,9 @@ def init_routes(app):
             Task.name.label('task_name'),
             Task.location.label('task_location'),
             TimeLog.start_time.label('check_in_time'),
-            TimeLog.end_time.label('check_out_time'),  # Add this line
+            TimeLog.end_time.label('check_out_time'),
+            TimeLog.lunch_break_start.label('lunch_break_start'),
+            TimeLog.lunch_break_end.label('lunch_break_end'),
             func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id)
@@ -135,6 +137,10 @@ def init_routes(app):
             sort_expr = TimeLog.start_time
         elif sort_field == 'check_out_time':
             sort_expr = TimeLog.end_time
+        elif sort_field == 'lunch_break_start':
+            sort_expr = TimeLog.lunch_break_start
+        elif sort_field == 'lunch_break_end':
+            sort_expr = TimeLog.lunch_break_end
         else:
             sort_expr = Employee.name  # Default sort
 
@@ -149,7 +155,9 @@ def init_routes(app):
                 'task_name': record.task_name,
                 'task_location': record.task_location,
                 'check_in_time': record.check_in_time.isoformat() if record.check_in_time else None,
-                'check_out_time': record.check_out_time.isoformat() if record.check_out_time else None,  # Add this line
+                'check_out_time': record.check_out_time.isoformat() if record.check_out_time else None,
+                'lunch_break_start': record.lunch_break_start.isoformat() if record.lunch_break_start else None,
+                'lunch_break_end': record.lunch_break_end.isoformat() if record.lunch_break_end else None,
                 'total_hours': int(record.total_hours) if record.total_hours is not None else 0,
                 'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0
             }

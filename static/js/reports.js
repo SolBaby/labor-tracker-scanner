@@ -29,6 +29,8 @@ function renderReports(data) {
             <td>${record.task_location}</td>
             <td>${record.check_in_time ? new Date(record.check_in_time).toLocaleString() : 'N/A'}</td>
             <td>${record.check_out_time ? new Date(record.check_out_time).toLocaleString() : 'N/A'}</td>
+            <td>${record.lunch_break_start ? new Date(record.lunch_break_start).toLocaleString() : 'N/A'}</td>
+            <td>${record.lunch_break_end ? new Date(record.lunch_break_end).toLocaleString() : 'N/A'}</td>
             <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
             <td>
                 <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_hours}, ${record.total_minutes})">Edit</button>
