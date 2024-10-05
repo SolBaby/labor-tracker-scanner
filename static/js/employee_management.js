@@ -1,12 +1,45 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const addEmployeeForm = document.getElementById('add-employee-form');
-    const employeeTable = document.querySelector('table tbody');
+    const employeeTable = document.getElementById('employee-table');
+    const searchInput = document.getElementById('employee-search');
+    const searchBtn = document.getElementById('search-btn');
+    const addEmployeeBtn = document.getElementById('add-employee-btn');
+    const employeeModal = document.getElementById('employee-modal');
+    const employeeForm = document.getElementById('employee-form');
+    const closeBtn = employeeModal.querySelector('.close');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const currentPageSpan = document.getElementById('current-page');
+    const totalPagesSpan = document.getElementById('total-pages');
 
-    addEmployeeForm.addEventListener('submit', function(e) {
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    function showModal(title, id = '', name = '', employeeId = '') {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('employee-id').value = id;
+        document.getElementById('employee-name').value = name;
+        document.getElementById('employee-id-input').value = employeeId;
+        employeeModal.style.display = 'block';
+    }
+
+    function closeModal() {
+        employeeModal.style.display = 'none';
+    }
+
+    addEmployeeBtn.addEventListener('click', () => showModal('Add New Employee'));
+    closeBtn.addEventListener('click', closeModal);
+
+    employeeForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const name = document.getElementById('new-employee-name').value;
-        const employeeId = document.getElementById('new-employee-id').value;
-        addEmployee(name, employeeId);
+        const id = document.getElementById('employee-id').value;
+        const name = document.getElementById('employee-name').value;
+        const employeeId = document.getElementById('employee-id-input').value;
+
+        if (id) {
+            updateEmployee(id, name, employeeId);
+        } else {
+            addEmployee(name, employeeId);
+        }
     });
 
     employeeTable.addEventListener('click', function(e) {
@@ -15,60 +48,99 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = target.dataset.id;
 
         if (target.classList.contains('edit-btn')) {
-            toggleEditMode(row, true);
-        } else if (target.classList.contains('save-btn')) {
-            const newName = row.querySelector('.edit-employee-name').value;
-            updateEmployee(id, newName);
+            const name = row.querySelector('.employee-name').textContent;
+            const employeeId = row.querySelector('td:nth-child(3)').textContent;
+            showModal('Edit Employee', id, name, employeeId);
         } else if (target.classList.contains('delete-btn')) {
-            deleteEmployee(id);
+            if (confirm('Are you sure you want to delete this employee?')) {
+                deleteEmployee(id);
+            }
         }
     });
-});
 
-function addEmployee(name, employeeId) {
-    fetch('/api/employee/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: name, employee_id: employeeId }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            alert(data.message);
+    searchBtn.addEventListener('click', searchEmployees);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchEmployees();
         }
-    })
-    .catch((error) => {
-        console.error('Error:', error);
     });
-}
 
-function updateEmployee(id, newName) {
-    fetch(`/api/employee/update/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newName }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-}
+    prevPageBtn.addEventListener('click', () => changePage(-1));
+    nextPageBtn.addEventListener('click', () => changePage(1));
 
-function deleteEmployee(id) {
-    if (confirm('Are you sure you want to delete this employee?')) {
+    function searchEmployees() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = employeeTable.querySelectorAll('tbody tr');
+        let visibleRows = 0;
+
+        rows.forEach(row => {
+            const name = row.querySelector('.employee-name').textContent.toLowerCase();
+            const employeeId = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const isVisible = name.includes(searchTerm) || employeeId.includes(searchTerm);
+            row.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleRows++;
+        });
+
+        updatePagination(visibleRows);
+    }
+
+    function updatePagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        currentPageSpan.textContent = currentPage;
+        totalPagesSpan.textContent = totalPages;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+
+        const rows = employeeTable.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            const shouldShow = index >= (currentPage - 1) * itemsPerPage && index < currentPage * itemsPerPage;
+            row.style.display = shouldShow && row.style.display !== 'none' ? '' : 'none';
+        });
+    }
+
+    function changePage(direction) {
+        currentPage += direction;
+        const visibleRows = Array.from(employeeTable.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none').length;
+        updatePagination(visibleRows);
+    }
+
+    function addEmployee(name, employeeId) {
+        fetch('/api/employee/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, employee_id: employeeId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                closeModal();
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function updateEmployee(id, name, employeeId) {
+        fetch(`/api/employee/update/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, employee_id: employeeId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                closeModal();
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function deleteEmployee(id) {
         fetch(`/api/employee/delete/${id}`, {
             method: 'DELETE',
         })
@@ -80,20 +152,9 @@ function deleteEmployee(id) {
                 alert(data.message);
             }
         })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+        .catch(error => console.error('Error:', error));
     }
-}
 
-function toggleEditMode(row, editable) {
-    const nameSpan = row.querySelector('.employee-name');
-    const nameInput = row.querySelector('.edit-employee-name');
-    const editBtn = row.querySelector('.edit-btn');
-    const saveBtn = row.querySelector('.save-btn');
-
-    nameSpan.style.display = editable ? 'none' : 'inline';
-    nameInput.style.display = editable ? 'inline' : 'none';
-    editBtn.style.display = editable ? 'none' : 'inline';
-    saveBtn.style.display = editable ? 'inline' : 'none';
-}
+    // Initialize pagination
+    updatePagination(employeeTable.querySelectorAll('tbody tr').length);
+});

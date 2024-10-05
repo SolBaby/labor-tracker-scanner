@@ -1,23 +1,29 @@
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
+from flask_migrate import Migrate
 
-class Base(DeclarativeBase):
-    pass
+db = SQLAlchemy()
+migrate = Migrate()
 
-db = SQLAlchemy(model_class=Base)
+def create_app():
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+    app.config['SECRET_KEY'] = os.urandom(24)
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-app.config['SECRET_KEY'] = os.urandom(24)
-db.init_app(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
 
-from routes import *
+    with app.app_context():
+        import routes
+        routes.init_routes(app)
+    
+    return app
 
-with app.app_context():
-    db.create_all()
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host="0.0.0.0", port=5000, debug=True)

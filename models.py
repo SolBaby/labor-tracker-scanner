@@ -11,6 +11,7 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     task_id = db.Column(db.String(20), unique=True, nullable=False)
+    barcode = db.Column(db.String(50), unique=True, nullable=False)
     time_logs = db.relationship('TimeLog', backref='task', lazy=True)
 
 class TimeLog(db.Model):

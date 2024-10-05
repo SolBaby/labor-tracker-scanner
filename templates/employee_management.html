@@ -3,14 +3,14 @@
 {% block content %}
 <h1>Employee Management</h1>
 
-<form id="add-employee-form">
-    <h2>Add New Employee</h2>
-    <input type="text" id="new-employee-name" placeholder="Employee Name" required>
-    <input type="text" id="new-employee-id" placeholder="Employee ID" required>
-    <button type="submit" class="btn">Add Employee</button>
-</form>
+<div class="search-container">
+    <input type="text" id="employee-search" placeholder="Search employees...">
+    <button class="btn" id="search-btn">Search</button>
+</div>
 
-<table>
+<button class="btn" id="add-employee-btn">Add New Employee</button>
+
+<table id="employee-table">
     <thead>
         <tr>
             <th>ID</th>
@@ -23,20 +23,37 @@
         {% for employee in employees %}
         <tr>
             <td>{{ employee.id }}</td>
-            <td>
-                <span class="employee-name">{{ employee.name }}</span>
-                <input type="text" class="edit-employee-name" value="{{ employee.name }}" style="display: none;">
-            </td>
+            <td class="employee-name">{{ employee.name }}</td>
             <td>{{ employee.employee_id }}</td>
             <td>
                 <button class="btn edit-btn" data-id="{{ employee.id }}">Edit</button>
-                <button class="btn save-btn" data-id="{{ employee.id }}" style="display: none;">Save</button>
                 <button class="btn delete-btn" data-id="{{ employee.id }}">Delete</button>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<div id="pagination">
+    <button id="prev-page" class="btn">Previous</button>
+    <span id="page-info">Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
+    <button id="next-page" class="btn">Next</button>
+</div>
+
+<div id="employee-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modal-title">Add New Employee</h2>
+        <form id="employee-form">
+            <input type="hidden" id="employee-id">
+            <label for="employee-name">Name:</label>
+            <input type="text" id="employee-name" required>
+            <label for="employee-id-input">Employee ID:</label>
+            <input type="text" id="employee-id-input" required>
+            <button type="submit" class="btn">Save</button>
+        </form>
+    </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/employee_management.js') }}"></script>
 {% endblock %}

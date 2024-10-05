@@ -3,12 +3,26 @@
 {% block content %}
 <h1>Task Management</h1>
 
+<div id="usb-scanner">
+    <h2>Scan Task Barcode</h2>
+    <input type="text" id="barcode-input" placeholder="Scan barcode here" autofocus>
+</div>
+
+<form id="add-task-form">
+    <h2>Add New Task</h2>
+    <input type="text" id="new-task-name" placeholder="Task Name" required>
+    <input type="text" id="new-task-id" placeholder="Task ID" required>
+    <input type="text" id="new-task-barcode" placeholder="Task Barcode" required>
+    <button type="submit" class="btn">Add Task</button>
+</form>
+
 <table>
     <thead>
         <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Task ID</th>
+            <th>Barcode</th>
         </tr>
     </thead>
     <tbody>
@@ -17,8 +31,11 @@
             <td>{{ task.id }}</td>
             <td>{{ task.name }}</td>
             <td>{{ task.task_id }}</td>
+            <td>{{ task.barcode }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<script src="{{ url_for('static', filename='js/task_management.js') }}"></script>
 {% endblock %}
