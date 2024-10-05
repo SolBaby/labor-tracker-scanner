@@ -3,6 +3,7 @@ from models import Employee, Task, TimeLog
 from sqlalchemy import func
 from app import db
 import json
+from datetime import datetime, timedelta
 
 def init_analytics(app, socketio):
     @socketio.on('connect', namespace='/ws/analytics')
@@ -18,11 +19,13 @@ def init_analytics(app, socketio):
         productivity_data = get_productivity_data()
         task_completion_data = get_task_completion_data()
         department_performance_data = get_department_performance_data()
+        real_time_data = get_real_time_data()
 
         emit('analytics_update', {
             'productivity': productivity_data,
             'task_completion': task_completion_data,
-            'department_performance': department_performance_data
+            'department_performance': department_performance_data,
+            'real_time': real_time_data
         }, namespace='/ws/analytics', broadcast=True)
 
     def get_productivity_data():
@@ -79,11 +82,34 @@ def init_analytics(app, socketio):
             for record in department_data
         ]
 
-    # Schedule periodic updates (every 30 seconds)
+    def get_real_time_data():
+        now = datetime.utcnow()
+        one_hour_ago = now - timedelta(hours=1)
+        
+        real_time_data = db.session.query(
+            Employee.name.label('employee_name'),
+            Task.name.label('task_name'),
+            TimeLog.start_time.label('start_time'),
+            TimeLog.status.label('status')
+        ).join(Employee).join(Task).filter(
+            TimeLog.start_time >= one_hour_ago
+        ).order_by(TimeLog.start_time.desc()).limit(10).all()
+
+        return [
+            {
+                'employee_name': record.employee_name,
+                'task_name': record.task_name,
+                'start_time': record.start_time.isoformat(),
+                'status': record.status
+            }
+            for record in real_time_data
+        ]
+
+    # Schedule periodic updates (every 10 seconds)
     def schedule_updates():
         with app.app_context():
             emit_analytics_data()
-        socketio.sleep(30)
+        socketio.sleep(10)
         socketio.start_background_task(schedule_updates)
 
     socketio.start_background_task(schedule_updates)

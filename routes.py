@@ -66,7 +66,7 @@ def init_routes(app):
 
     @app.route('/api/reports/data')
     def reports_data():
-        sort_field = request.args.get('sort_field', 'employee.name')
+        sort_field = request.args.get('sort_field', 'employee_name')
         sort_order = request.args.get('sort_order', 'asc')
 
         query = db.session.query(
@@ -86,10 +86,12 @@ def init_routes(app):
             sort_expr = Employee.name
         elif sort_field == 'task_name':
             sort_expr = Task.name
+        elif sort_field == 'task_location':
+            sort_expr = Task.location
         elif sort_field == 'check_in_time':
             sort_expr = TimeLog.start_time
         else:
-            sort_expr = getattr(Task, sort_field)
+            sort_expr = Employee.name  # Default sort
 
         query = query.order_by(sort_expr.desc() if sort_order == 'desc' else sort_expr)
 
