@@ -90,6 +90,19 @@ def init_routes(app):
                 return jsonify({'status': 'error', 'message': str(e)})
         return jsonify({'status': 'error', 'message': 'Time log not found'})
 
+    @app.route('/api/reports/delete/<int:id>', methods=['DELETE'])
+    def delete_report(id):
+        time_log = TimeLog.query.get(id)
+        if time_log:
+            try:
+                db.session.delete(time_log)
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'Report deleted successfully'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'status': 'error', 'message': str(e)})
+        return jsonify({'status': 'error', 'message': 'Time log not found'})
+
     @app.route('/api/reports/data')
     def reports_data():
         sort_field = request.args.get('sort_field', 'employee_name')

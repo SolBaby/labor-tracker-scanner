@@ -17,6 +17,7 @@ function updateReports() {
                     <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
                     <td>
                         <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_hours}, ${record.total_minutes})">Edit</button>
+                        <button class="btn delete-btn" onclick="deleteReport('${record.id}')">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -35,6 +36,23 @@ function updateReports() {
             });
         })
         .catch(error => console.error('Error:', error));
+}
+
+function deleteReport(id) {
+    if (confirm('Are you sure you want to delete this report?')) {
+        fetch(`/api/reports/delete/${id}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateReports();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 }
 
 // Add this event listener to handle sorting
