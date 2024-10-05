@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateTask(id, name, taskId, barcode, location) {
+        console.log('Updating task:', { id, name, taskId, barcode, location }); // Debug log
         fetch(`/api/task/update/${id}`, {
             method: 'PUT',
             headers: {
@@ -112,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Server response:', data); // Debug log
             if (data.status === 'success') {
                 location.reload();
             } else {

@@ -127,7 +127,7 @@ def init_routes(app):
     @app.route('/api/task/add', methods=['POST'])
     def add_task():
         data = request.json
-        new_task = Task(name=data['name'], task_id=data['task_id'], barcode=data['barcode'])
+        new_task = Task(name=data['name'], task_id=data['task_id'], barcode=data['barcode'], location=data['location'])
         db.session.add(new_task)
         try:
             db.session.commit()
@@ -139,18 +139,22 @@ def init_routes(app):
     @app.route('/api/task/update/<int:id>', methods=['PUT'])
     def update_task(id):
         data = request.json
+        print(f"Received data for task update: {data}")  # Debug print
         task = Task.query.get(id)
         if task:
             task.name = data['name']
             task.task_id = data['task_id']
             task.barcode = data['barcode']
-            task.location = data['location']  # Add this line to update the location
+            task.location = data['location']
             try:
                 db.session.commit()
+                print(f"Task updated successfully: {task.id}")  # Debug print
                 return jsonify({'status': 'success', 'message': 'Task updated successfully'})
             except Exception as e:
                 db.session.rollback()
+                print(f"Error updating task: {str(e)}")  # Debug print
                 return jsonify({'status': 'error', 'message': str(e)})
+        print(f"Task not found: {id}")  # Debug print
         return jsonify({'status': 'error', 'message': 'Task not found'})
 
     @app.route('/api/task/delete/<int:id>', methods=['DELETE'])
@@ -185,8 +189,8 @@ def init_routes(app):
                 'employee_name': record.employee_name,
                 'task_name': record.task_name,
                 'task_location': record.task_location,
-                'total_minutes': int(record.total_minutes),
-                'total_seconds': int(record.total_seconds)
+                'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0,
+                'total_seconds': int(record.total_seconds) if record.total_seconds is not None else 0
             }
             for record in employee_hours
         ])
