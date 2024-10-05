@@ -33,8 +33,8 @@ function renderReports(data) {
             <td>${record.lunch_break_end ? new Date(record.lunch_break_end).toLocaleString() : 'N/A'}</td>
             <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
             <td>
-                <button class="btn edit-btn" onclick="editReport('${record.id}', '${record.employee_name}', '${record.task_name}', '${record.task_location}', ${record.total_hours}, ${record.total_minutes})">Edit</button>
-                <button class="btn delete-btn" onclick="deleteReport('${record.id}')">Delete</button>
+                <button class="btn edit-btn" data-id="${record.id}">Edit</button>
+                <button class="btn delete-btn" data-id="${record.id}">Delete</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -93,18 +93,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     resetSortBtn.addEventListener('click', resetSorting);
 
+    // Add event delegation for edit and delete buttons
+    document.querySelector('table tbody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-btn')) {
+            const id = e.target.dataset.id;
+            editReport(id);
+        } else if (e.target.classList.contains('delete-btn')) {
+            const id = e.target.dataset.id;
+            deleteReport(id);
+        }
+    });
+
     // Initial update
     updateReports();
 });
 
-function editReport(id, employeeName, taskName, taskLocation, totalHours, totalMinutes) {
+function editReport(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
     const editModal = document.getElementById('edit-modal');
     document.getElementById('edit-id').value = id;
-    document.getElementById('edit-employee-name').value = employeeName;
-    document.getElementById('edit-task-name').value = taskName;
-    document.getElementById('edit-task-location').value = taskLocation;
-    document.getElementById('edit-total-hours').value = totalHours;
-    document.getElementById('edit-total-minutes').value = totalMinutes;
+    document.getElementById('edit-employee-name').value = row.cells[0].textContent;
+    document.getElementById('edit-task-name').value = row.cells[1].textContent;
+    document.getElementById('edit-task-location').value = row.cells[2].textContent;
+    
+    const timeParts = row.cells[7].textContent.split(',');
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+    
+    document.getElementById('edit-total-hours').value = hours;
+    document.getElementById('edit-total-minutes').value = minutes;
+    
     editModal.style.display = 'block';
 }
 
