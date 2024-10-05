@@ -23,6 +23,7 @@
             <th>Name</th>
             <th>Task ID</th>
             <th>Barcode</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -32,10 +33,31 @@
             <td>{{ task.name }}</td>
             <td>{{ task.task_id }}</td>
             <td>{{ task.barcode }}</td>
+            <td>
+                <button class="btn edit-btn" data-id="{{ task.id }}">Edit</button>
+                <button class="btn delete-btn" data-id="{{ task.id }}">Delete</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<div id="task-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modal-title">Add New Task</h2>
+        <form id="task-form">
+            <input type="hidden" id="task-id">
+            <label for="task-name">Name:</label>
+            <input type="text" id="task-name" required>
+            <label for="task-id-input">Task ID:</label>
+            <input type="text" id="task-id-input" required>
+            <label for="task-barcode">Barcode:</label>
+            <input type="text" id="task-barcode" required>
+            <button type="submit" class="btn">Save</button>
+        </form>
+    </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/task_management.js') }}"></script>
 {% endblock %}

@@ -120,6 +120,35 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)})
 
+    @app.route('/api/task/update/<int:id>', methods=['PUT'])
+    def update_task(id):
+        data = request.json
+        task = Task.query.get(id)
+        if task:
+            task.name = data['name']
+            task.task_id = data['task_id']
+            task.barcode = data['barcode']
+            try:
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'Task updated successfully'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'status': 'error', 'message': str(e)})
+        return jsonify({'status': 'error', 'message': 'Task not found'})
+
+    @app.route('/api/task/delete/<int:id>', methods=['DELETE'])
+    def delete_task(id):
+        task = Task.query.get(id)
+        if task:
+            db.session.delete(task)
+            try:
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'Task deleted successfully'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'status': 'error', 'message': str(e)})
+        return jsonify({'status': 'error', 'message': 'Task not found'})
+
     @app.route('/reports')
     def reports():
         employee_hours = db.session.query(
