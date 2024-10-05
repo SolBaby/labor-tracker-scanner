@@ -21,3 +21,4 @@ class TimeLog(db.Model):
     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
     duration = db.Column(db.Interval)
+    status = db.Column(db.String(20), nullable=False, default='checked_in')

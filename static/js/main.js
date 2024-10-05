@@ -1,7 +1,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     const checkInForm = document.getElementById('check-in-form');
     const checkOutForm = document.getElementById('check-out-form');
+    const scanForm = document.getElementById('scan-form');
     const barcodeInput = document.getElementById('barcode-input');
+    const scanResult = document.getElementById('scan-result');
+
+    if (scanForm) {
+        scanForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const scannedValue = barcodeInput.value.trim();
+            if (scannedValue) {
+                sendScanToServer(scannedValue);
+            }
+        });
+    }
 
     if (barcodeInput) {
         barcodeInput.addEventListener('keypress', function(e) {
@@ -36,6 +48,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function sendScanToServer(scannedValue) {
+    fetch('/api/scan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ scanned_value: scannedValue }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        const scanResult = document.getElementById('scan-result');
+        scanResult.textContent = data.message;
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
 
 function checkIn(employeeId, taskId) {
     fetch('/api/employee/check_in', {

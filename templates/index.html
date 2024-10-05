@@ -5,7 +5,11 @@
 
 <div id="usb-scanner">
     <h2>Scan Employee ID or Task ID</h2>
-    <input type="text" id="barcode-input" placeholder="Scan barcode here" autofocus>
+    <form id="scan-form">
+        <input type="text" id="barcode-input" placeholder="Scan barcode here" autofocus>
+        <button type="submit" class="btn">Submit</button>
+    </form>
+    <div id="scan-result"></div>
 </div>
 
 <form id="check-in-form">

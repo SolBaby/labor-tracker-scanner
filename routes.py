@@ -84,7 +84,7 @@ def init_routes(app):
         task = Task.query.filter_by(task_id=data['task_id']).first()
         
         if employee and task:
-            time_log = TimeLog(employee_id=employee.id, task_id=task.id)
+            time_log = TimeLog(employee_id=employee.id, task_id=task.id, status='checked_in')
             db.session.add(time_log)
             db.session.commit()
             return jsonify({'status': 'success', 'message': 'Check-in successful'})
@@ -97,10 +97,11 @@ def init_routes(app):
         employee = Employee.query.filter_by(employee_id=data['employee_id']).first()
         
         if employee:
-            time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None).order_by(TimeLog.start_time.desc()).first()
+            time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
             if time_log:
                 time_log.end_time = datetime.utcnow()
                 time_log.duration = time_log.end_time - time_log.start_time
+                time_log.status = 'checked_out'
                 db.session.commit()
                 return jsonify({'status': 'success', 'message': 'Check-out successful'})
             else:
@@ -162,3 +163,59 @@ def init_routes(app):
         ).join(TimeLog).group_by(Task.id).all()
 
         return render_template('reports.html', employee_hours=employee_hours, task_hours=task_hours)
+
+    @app.route('/api/scan', methods=['POST'])
+    def handle_scan():
+        data = request.json
+        scanned_value = data['scanned_value']
+
+        if scanned_value.startswith('E'):
+            return handle_employee_scan(scanned_value)
+        elif scanned_value.startswith('T'):
+            return handle_task_scan(scanned_value)
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid scan format'})
+
+    def handle_employee_scan(employee_id):
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Employee not found'})
+
+        active_time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
+        if active_time_log:
+            # Check out
+            active_time_log.end_time = datetime.utcnow()
+            active_time_log.duration = active_time_log.end_time - active_time_log.start_time
+            active_time_log.status = 'checked_out'
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked out successfully'})
+        else:
+            # Check in
+            new_time_log = TimeLog(employee_id=employee.id, status='checked_in')
+            db.session.add(new_time_log)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked in successfully'})
+
+    def handle_task_scan(task_id):
+        task = Task.query.filter_by(task_id=task_id).first()
+        if not task:
+            return jsonify({'status': 'error', 'message': 'Task not found'})
+
+        active_time_log = TimeLog.query.filter_by(end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        if not active_time_log:
+            return jsonify({'status': 'error', 'message': 'No active employee check-in found'})
+
+        if active_time_log.task_id == task.id:
+            # Stop task
+            active_time_log.end_time = datetime.utcnow()
+            active_time_log.duration = active_time_log.end_time - active_time_log.start_time
+            active_time_log.status = 'checked_out'
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': f'Task {task.name} stopped successfully'})
+        else:
+            # Start new task
+            new_time_log = TimeLog(employee_id=active_time_log.employee_id, task_id=task.id, status='checked_in')
+            db.session.add(new_time_log)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': f'Task {task.name} started successfully'})
+
