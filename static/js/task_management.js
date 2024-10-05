@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = document.getElementById('new-task-name').value;
             const taskId = document.getElementById('new-task-id').value;
             const barcode = document.getElementById('new-task-barcode').value;
-            addTask(name, taskId, barcode);
+            const location = document.getElementById('new-task-location').value;
+            addTask(name, taskId, barcode, location);
         });
     }
 
@@ -36,7 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const name = row.cells[1].textContent;
                 const taskId = row.cells[2].textContent;
                 const barcode = row.cells[3].textContent;
-                showModal('Edit Task', id, name, taskId, barcode);
+                const location = row.cells[4].textContent;
+                showModal('Edit Task', id, name, taskId, barcode, location);
             } else if (target.classList.contains('delete-btn')) {
                 if (confirm('Are you sure you want to delete this task?')) {
                     deleteTask(target.dataset.id);
@@ -52,10 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = document.getElementById('task-name').value;
             const taskId = document.getElementById('task-id-input').value;
             const barcode = document.getElementById('task-barcode').value;
+            const location = document.getElementById('task-location').value;
             if (id) {
-                updateTask(id, name, taskId, barcode);
+                updateTask(id, name, taskId, barcode, location);
             } else {
-                addTask(name, taskId, barcode);
+                addTask(name, taskId, barcode, location);
             }
         });
     }
@@ -64,12 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtn.addEventListener('click', closeModal);
     }
 
-    function showModal(title, id = '', name = '', taskId = '', barcode = '') {
+    function showModal(title, id = '', name = '', taskId = '', barcode = '', location = '') {
         document.getElementById('modal-title').textContent = title;
         document.getElementById('task-id').value = id;
         document.getElementById('task-name').value = name;
         document.getElementById('task-id-input').value = taskId;
         document.getElementById('task-barcode').value = barcode;
+        document.getElementById('task-location').value = location;
         taskModal.style.display = 'block';
     }
 
@@ -77,13 +81,13 @@ document.addEventListener('DOMContentLoaded', function() {
         taskModal.style.display = 'none';
     }
 
-    function addTask(name, taskId, barcode) {
+    function addTask(name, taskId, barcode, location) {
         fetch('/api/task/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name: name, task_id: taskId, barcode: barcode }),
+            body: JSON.stringify({ name: name, task_id: taskId, barcode: barcode, location: location }),
         })
         .then(response => response.json())
         .then(data => {
@@ -98,13 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateTask(id, name, taskId, barcode) {
+    function updateTask(id, name, taskId, barcode, location) {
         fetch(`/api/task/update/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name: name, task_id: taskId, barcode: barcode }),
+            body: JSON.stringify({ name: name, task_id: taskId, barcode: barcode, location: location }),
         })
         .then(response => response.json())
         .then(data => {

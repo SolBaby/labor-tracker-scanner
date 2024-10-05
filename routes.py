@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify
 from models import Employee, Task, TimeLog
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from app import db
 
 def init_routes(app):
@@ -11,23 +11,37 @@ def init_routes(app):
 
     @app.route('/employee_management')
     def employee_management():
-        page = request.args.get('page', 1, type=int)
-        per_page = 10
-        employees = Employee.query.paginate(page=page, per_page=per_page, error_out=False)
-        return render_template('employee_management.html', employees=employees.items, page=page, total_pages=employees.pages)
+        return render_template('employee_management.html')
 
     @app.route('/api/employees/search')
     def search_employees():
         search_term = request.args.get('term', '')
+        department = request.args.get('department', '')
         page = request.args.get('page', 1, type=int)
+        sort_field = request.args.get('sort_field', 'id')
+        sort_order = request.args.get('sort_order', 'asc')
         per_page = 10
-        employees = Employee.query.filter(
-            (Employee.name.ilike(f'%{search_term}%')) |
-            (Employee.employee_id.ilike(f'%{search_term}%'))
-        ).paginate(page=page, per_page=per_page, error_out=False)
+
+        query = Employee.query
+
+        if search_term:
+            query = query.filter(
+                (Employee.name.ilike(f'%{search_term}%')) |
+                (Employee.employee_id.ilike(f'%{search_term}%'))
+            )
+
+        if department:
+            query = query.filter(Employee.department == department)
+
+        if sort_order == 'desc':
+            query = query.order_by(desc(getattr(Employee, sort_field)))
+        else:
+            query = query.order_by(getattr(Employee, sort_field))
+
+        employees = query.paginate(page=page, per_page=per_page, error_out=False)
         
         return jsonify({
-            'employees': [{'id': e.id, 'name': e.name, 'employee_id': e.employee_id} for e in employees.items],
+            'employees': [{'id': e.id, 'name': e.name, 'employee_id': e.employee_id, 'department': e.department} for e in employees.items],
             'total_pages': employees.pages,
             'current_page': page
         })
@@ -40,7 +54,7 @@ def init_routes(app):
     @app.route('/api/employee/add', methods=['POST'])
     def add_employee():
         data = request.json
-        new_employee = Employee(name=data['name'], employee_id=data['employee_id'])
+        new_employee = Employee(name=data['name'], employee_id=data['employee_id'], department=data['department'])
         db.session.add(new_employee)
         try:
             db.session.commit()
@@ -56,6 +70,7 @@ def init_routes(app):
         if employee:
             employee.name = data['name']
             employee.employee_id = data['employee_id']
+            employee.department = data['department']
             try:
                 db.session.commit()
                 return jsonify({'status': 'success', 'message': 'Employee updated successfully'})
@@ -153,16 +168,14 @@ def init_routes(app):
     @app.route('/reports')
     def reports():
         employee_hours = db.session.query(
-            Employee.name,
-            func.sum(TimeLog.duration)
-        ).join(TimeLog).group_by(Employee.id).all()
+            Employee.name.label('employee_name'),
+            Task.name.label('task_name'),
+            Task.location.label('task_location'),
+            func.sum(func.extract('epoch', TimeLog.duration) / 60).label('total_minutes'),
+            func.sum(func.extract('epoch', TimeLog.duration) % 60).label('total_seconds')
+        ).join(TimeLog).join(Task).group_by(Employee.id, Task.id).all()
 
-        task_hours = db.session.query(
-            Task.name,
-            func.sum(TimeLog.duration)
-        ).join(TimeLog).group_by(Task.id).all()
-
-        return render_template('reports.html', employee_hours=employee_hours, task_hours=task_hours)
+        return render_template('reports.html', employee_hours=employee_hours)
 
     @app.route('/api/scan', methods=['POST'])
     def handle_scan():

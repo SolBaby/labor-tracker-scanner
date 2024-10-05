@@ -3,19 +3,30 @@
 {% block content %}
 <h1>Employee Management</h1>
 
-<div class="search-container">
-    <input type="text" id="employee-search" placeholder="Search employees...">
-    <button class="btn" id="search-btn">Search</button>
+<div class="controls">
+    <div class="search-container">
+        <input type="text" id="employee-search" placeholder="Search employees...">
+        <button class="btn" id="search-btn">Search</button>
+    </div>
+    <div class="filter-container">
+        <select id="department-filter">
+            <option value="">All Departments</option>
+            <option value="IT">IT</option>
+            <option value="HR">HR</option>
+            <option value="Sales">Sales</option>
+            <option value="Marketing">Marketing</option>
+        </select>
+    </div>
+    <button class="btn" id="add-employee-btn">Add New Employee</button>
 </div>
-
-<button class="btn" id="add-employee-btn">Add New Employee</button>
 
 <table id="employee-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Employee ID</th>
+            <th class="sortable" data-sort="id">ID</th>
+            <th class="sortable" data-sort="name">Name</th>
+            <th class="sortable" data-sort="employee_id">Employee ID</th>
+            <th class="sortable" data-sort="department">Department</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -25,6 +36,7 @@
             <td>{{ employee.id }}</td>
             <td class="employee-name">{{ employee.name }}</td>
             <td>{{ employee.employee_id }}</td>
+            <td>{{ employee.department }}</td>
             <td>
                 <button class="btn edit-btn" data-id="{{ employee.id }}">Edit</button>
                 <button class="btn delete-btn" data-id="{{ employee.id }}">Delete</button>
@@ -50,6 +62,13 @@
             <input type="text" id="employee-name" required>
             <label for="employee-id-input">Employee ID:</label>
             <input type="text" id="employee-id-input" required>
+            <label for="employee-department">Department:</label>
+            <select id="employee-department" required>
+                <option value="IT">IT</option>
+                <option value="HR">HR</option>
+                <option value="Sales">Sales</option>
+                <option value="Marketing">Marketing</option>
+            </select>
             <button type="submit" class="btn">Save</button>
         </form>
     </div>

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const employeeTable = document.getElementById('employee-table');
     const searchInput = document.getElementById('employee-search');
     const searchBtn = document.getElementById('search-btn');
+    const departmentFilter = document.getElementById('department-filter');
     const addEmployeeBtn = document.getElementById('add-employee-btn');
     const employeeModal = document.getElementById('employee-modal');
     const employeeForm = document.getElementById('employee-form');
@@ -12,13 +13,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalPagesSpan = document.getElementById('total-pages');
 
     let currentPage = 1;
+    let currentSort = { field: 'id', order: 'asc' };
     const itemsPerPage = 10;
 
-    function showModal(title, id = '', name = '', employeeId = '') {
+    function showModal(title, id = '', name = '', employeeId = '', department = '') {
         document.getElementById('modal-title').textContent = title;
         document.getElementById('employee-id').value = id;
         document.getElementById('employee-name').value = name;
         document.getElementById('employee-id-input').value = employeeId;
+        document.getElementById('employee-department').value = department;
         employeeModal.style.display = 'block';
     }
 
@@ -34,26 +37,35 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = document.getElementById('employee-id').value;
         const name = document.getElementById('employee-name').value;
         const employeeId = document.getElementById('employee-id-input').value;
+        const department = document.getElementById('employee-department').value;
 
         if (id) {
-            updateEmployee(id, name, employeeId);
+            updateEmployee(id, name, employeeId, department);
         } else {
-            addEmployee(name, employeeId);
+            addEmployee(name, employeeId, department);
         }
     });
 
     employeeTable.addEventListener('click', function(e) {
         const target = e.target;
-        const row = target.closest('tr');
-        const id = target.dataset.id;
-
-        if (target.classList.contains('edit-btn')) {
+        if (target.classList.contains('sortable')) {
+            const field = target.dataset.sort;
+            if (currentSort.field === field) {
+                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { field, order: 'asc' };
+            }
+            searchEmployees();
+        } else if (target.classList.contains('edit-btn')) {
+            const row = target.closest('tr');
+            const id = target.dataset.id;
             const name = row.querySelector('.employee-name').textContent;
-            const employeeId = row.querySelector('td:nth-child(3)').textContent;
-            showModal('Edit Employee', id, name, employeeId);
+            const employeeId = row.cells[2].textContent;
+            const department = row.cells[3].textContent;
+            showModal('Edit Employee', id, name, employeeId, department);
         } else if (target.classList.contains('delete-btn')) {
             if (confirm('Are you sure you want to delete this employee?')) {
-                deleteEmployee(id);
+                deleteEmployee(target.dataset.id);
             }
         }
     });
@@ -65,12 +77,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    departmentFilter.addEventListener('change', searchEmployees);
+
     prevPageBtn.addEventListener('click', () => changePage(-1));
     nextPageBtn.addEventListener('click', () => changePage(1));
 
     function searchEmployees() {
         const searchTerm = searchInput.value.toLowerCase();
-        fetch(`/api/employees/search?term=${searchTerm}&page=${currentPage}`)
+        const department = departmentFilter.value;
+        fetch(`/api/employees/search?term=${searchTerm}&department=${department}&page=${currentPage}&sort_field=${currentSort.field}&sort_order=${currentSort.order}`)
             .then(response => response.json())
             .then(data => {
                 updateEmployeeTable(data.employees);
@@ -88,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${employee.id}</td>
                 <td class="employee-name">${employee.name}</td>
                 <td>${employee.employee_id}</td>
+                <td>${employee.department}</td>
                 <td>
                     <button class="btn edit-btn" data-id="${employee.id}">Edit</button>
                     <button class="btn delete-btn" data-id="${employee.id}">Delete</button>
@@ -110,11 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
         searchEmployees();
     }
 
-    function addEmployee(name, employeeId) {
+    function addEmployee(name, employeeId, department) {
         fetch('/api/employee/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, employee_id: employeeId }),
+            body: JSON.stringify({ name, employee_id: employeeId, department }),
         })
         .then(response => response.json())
         .then(data => {
@@ -128,11 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error:', error));
     }
 
-    function updateEmployee(id, name, employeeId) {
+    function updateEmployee(id, name, employeeId, department) {
         fetch(`/api/employee/update/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, employee_id: employeeId }),
+            body: JSON.stringify({ name, employee_id: employeeId, department }),
         })
         .then(response => response.json())
         .then(data => {
