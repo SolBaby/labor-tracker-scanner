@@ -19,9 +19,9 @@
     <button type="submit" class="btn">Check In</button>
 </form>
 
-<form id="check-out-form">
+<form id="check-out-form" action="/api/employee/check_out" method="POST">
     <h2>Employee Check-Out</h2>
-    <input type="text" id="employee-id-out" placeholder="Employee ID" required>
+    <input type="text" id="employee-id-out" name="employee_id" placeholder="Employee ID" required>
     <button type="submit" class="btn">Check Out</button>
 </form>
 {% endblock %}

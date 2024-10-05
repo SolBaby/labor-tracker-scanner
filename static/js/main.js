@@ -111,10 +111,15 @@ function checkOut(employeeId) {
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
-        document.getElementById('employee-id-out').value = ''; // Clear employee ID input for check-out
+        if (data.status === 'success') {
+            alert(data.message);
+            document.getElementById('employee-id-out').value = '';
+        } else {
+            alert(data.message);
+        }
     })
     .catch((error) => {
         console.error('Error:', error);
+        alert('An error occurred during check-out. Please try again.');
     });
 }

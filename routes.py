@@ -45,6 +45,32 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/api/employee/check_out', methods=['POST'])
+    def employee_check_out():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        time_log.end_time = datetime.utcnow()
+        time_log.duration = time_log.end_time - time_log.start_time
+        time_log.status = 'checked_out'
+        
+        try:
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Check-out successful'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/reports/edit', methods=['POST'])
     def edit_report():
         data = request.json

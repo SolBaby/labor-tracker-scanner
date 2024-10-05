@@ -39,6 +39,9 @@ class CheckInResource(Resource):
         return {'message': 'Invalid employee ID or task ID'}, 400
 
 class CheckOutResource(Resource):
+    def get(self):
+        return {'message': 'Use POST method to check out'}, 405
+
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument('employee_id', type=str, required=True)
@@ -53,9 +56,9 @@ class CheckOutResource(Resource):
                 time_log.duration = time_log.end_time - time_log.start_time
                 time_log.status = 'checked_out'
                 db.session.commit()
-                return {'message': 'Check-out successful'}, 200
-            return {'message': 'No active check-in found'}, 400
-        return {'message': 'Invalid employee ID'}, 400
+                return {'status': 'success', 'message': 'Check-out successful'}, 200
+            return {'status': 'error', 'message': 'No active check-in found'}, 400
+        return {'status': 'error', 'message': 'Invalid employee ID'}, 400
 
 api.add_resource(EmployeeResource, '/api/employee/<string:employee_id>')
 api.add_resource(TaskResource, '/api/task/<string:task_id>')
