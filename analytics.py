@@ -9,24 +9,24 @@ def init_analytics(app, socketio):
     @socketio.on('connect', namespace='/ws/analytics')
     def handle_connect():
         print('Client connected to analytics websocket')
-        emit_analytics_data()
+        emit_analytics_update()
 
     @socketio.on('disconnect', namespace='/ws/analytics')
     def handle_disconnect():
         print('Client disconnected from analytics websocket')
 
-    def emit_analytics_data():
+    def emit_analytics_update():
         productivity_data = get_productivity_data()
         task_completion_data = get_task_completion_data()
         department_performance_data = get_department_performance_data()
         real_time_data = get_real_time_data()
 
-        emit('analytics_update', {
+        socketio.emit('analytics_update', {
             'productivity': productivity_data,
             'task_completion': task_completion_data,
             'department_performance': department_performance_data,
             'real_time': real_time_data
-        }, namespace='/ws/analytics', broadcast=True)
+        }, namespace='/ws/analytics')
 
     def get_productivity_data():
         productivity_data = db.session.query(
@@ -108,10 +108,10 @@ def init_analytics(app, socketio):
     # Schedule periodic updates (every 10 seconds)
     def schedule_updates():
         with app.app_context():
-            emit_analytics_data()
+            emit_analytics_update()
         socketio.sleep(10)
         socketio.start_background_task(schedule_updates)
 
     socketio.start_background_task(schedule_updates)
 
-    return app
+    return app, emit_analytics_update

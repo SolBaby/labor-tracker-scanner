@@ -3,6 +3,7 @@ from app import db
 from models import Employee, Task, TimeLog
 from sqlalchemy import func
 from datetime import timedelta, datetime
+from analytics import init_analytics, emit_analytics_update
 
 def init_routes(app):
     @app.route('/')
@@ -40,6 +41,7 @@ def init_routes(app):
         
         try:
             db.session.commit()
+            emit_analytics_update()  # Add this line
             return jsonify({'status': 'success', 'message': 'Check-in successful'}), 200
         except Exception as e:
             db.session.rollback()
@@ -66,6 +68,7 @@ def init_routes(app):
         
         try:
             db.session.commit()
+            emit_analytics_update()  # Add this line
             return jsonify({'status': 'success', 'message': 'Check-out successful'}), 200
         except Exception as e:
             db.session.rollback()

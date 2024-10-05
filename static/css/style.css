@@ -124,6 +124,22 @@ th {
     background-color: #f0f0f0;
 }
 
-.sort-btn.asc .sort-arrow {
-    transform: rotate(180deg);
+.sort-btn.active {
+    background-color: #e0e0e0;
+}
+
+.sort-btn.active .sort-arrow {
+    color: #0779e4;
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+#reset-sort-btn {
+    background-color: #f44336;
+}
+
+#reset-sort-btn:hover {
+    background-color: #d32f2f;
 }

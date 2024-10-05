@@ -5,21 +5,19 @@ let realTimeChart;
 let socket;
 
 function initWebSocket() {
-    socket = new WebSocket('ws://' + location.host + '/ws/analytics');
+    socket = io('/ws/analytics');
     
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
+    socket.on('connect', function() {
+        console.log('Connected to analytics websocket');
+    });
+
+    socket.on('analytics_update', function(data) {
         updateCharts(data);
-    };
+    });
 
-    socket.onclose = function(event) {
-        console.log('WebSocket closed. Reconnecting...');
-        setTimeout(initWebSocket, 1000);
-    };
-
-    socket.onerror = function(error) {
-        console.error('WebSocket error:', error);
-    };
+    socket.on('disconnect', function() {
+        console.log('Disconnected from analytics websocket');
+    });
 }
 
 function updateCharts(data) {
