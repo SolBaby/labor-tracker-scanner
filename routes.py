@@ -144,6 +144,7 @@ def init_routes(app):
             task.name = data['name']
             task.task_id = data['task_id']
             task.barcode = data['barcode']
+            task.location = data['location']  # Add this line to update the location
             try:
                 db.session.commit()
                 return jsonify({'status': 'success', 'message': 'Task updated successfully'})
