@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch((error) => {
             console.error('Error:', error);
+            alert('An error occurred while adding the task. Please try again.');
         });
     }
 
@@ -115,13 +116,29 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             console.log('Server response:', data); // Debug log
             if (data.status === 'success') {
-                location.reload();
+                // Update the table row
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.innerHTML = `
+                        <td>${id}</td>
+                        <td>${name}</td>
+                        <td>${taskId}</td>
+                        <td>${barcode}</td>
+                        <td>${location}</td>
+                        <td>
+                            <button class="btn edit-btn" data-id="${id}">Edit</button>
+                            <button class="btn delete-btn" data-id="${id}">Delete</button>
+                        </td>
+                    `;
+                }
+                closeModal();
             } else {
                 alert(data.message);
             }
         })
         .catch((error) => {
             console.error('Error:', error);
+            alert('An error occurred while updating the task. Please try again.');
         });
     }
 
@@ -132,13 +149,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                location.reload();
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.remove();
+                }
             } else {
                 alert(data.message);
             }
         })
         .catch((error) => {
             console.error('Error:', error);
+            alert('An error occurred while deleting the task. Please try again.');
         });
     }
 });

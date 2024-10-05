@@ -30,7 +30,7 @@
     </thead>
     <tbody>
         {% for task in tasks %}
-        <tr>
+        <tr data-id="{{ task.id }}">
             <td>{{ task.id }}</td>
             <td>{{ task.name }}</td>
             <td>{{ task.task_id }}</td>
