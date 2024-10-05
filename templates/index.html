@@ -3,13 +3,9 @@
 {% block content %}
 <h1>Welcome to Labor Tracking System</h1>
 
-<div id="barcode-scanner">
-    <div id="loadingMessage">🎥 Unable to access video stream (please make sure you have a webcam enabled)</div>
-    <canvas id="canvas" hidden></canvas>
-    <div id="output" hidden>
-        <div id="outputMessage">No QR code detected.</div>
-        <div hidden><b>Data:</b> <span id="outputData"></span></div>
-    </div>
+<div id="usb-scanner">
+    <h2>Scan Employee ID or Task ID</h2>
+    <input type="text" id="barcode-input" placeholder="Scan barcode here" autofocus>
 </div>
 
 <form id="check-in-form">

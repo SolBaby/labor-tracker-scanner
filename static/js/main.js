@@ -1,6 +1,23 @@
 document.addEventListener('DOMContentLoaded', function() {
     const checkInForm = document.getElementById('check-in-form');
     const checkOutForm = document.getElementById('check-out-form');
+    const barcodeInput = document.getElementById('barcode-input');
+
+    if (barcodeInput) {
+        barcodeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const scannedValue = this.value.trim();
+                if (scannedValue.startsWith('E')) {
+                    document.getElementById('employee-id').value = scannedValue;
+                    document.getElementById('employee-id-out').value = scannedValue;
+                } else if (scannedValue.startsWith('T')) {
+                    document.getElementById('task-id').value = scannedValue;
+                }
+                this.value = '';
+            }
+        });
+    }
 
     if (checkInForm) {
         checkInForm.addEventListener('submit', function(e) {
