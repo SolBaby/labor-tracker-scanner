@@ -41,7 +41,7 @@ def init_routes(app):
         
         try:
             db.session.commit()
-            emit_analytics_update()  # Add this line
+            emit_analytics_update(app.extensions['socketio'])
             return jsonify({'status': 'success', 'message': 'Check-in successful'}), 200
         except Exception as e:
             db.session.rollback()
@@ -68,7 +68,7 @@ def init_routes(app):
         
         try:
             db.session.commit()
-            emit_analytics_update()  # Add this line
+            emit_analytics_update(app.extensions['socketio'])
             return jsonify({'status': 'success', 'message': 'Check-out successful'}), 200
         except Exception as e:
             db.session.rollback()
