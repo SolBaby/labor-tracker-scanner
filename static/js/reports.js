@@ -21,10 +21,37 @@ function updateReports() {
                 `;
                 tbody.appendChild(row);
             });
+
+            // Update sort arrows
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                const arrow = btn.querySelector('.sort-arrow');
+                if (btn.dataset.sort === currentSort.field) {
+                    btn.classList.toggle('asc', currentSort.order === 'asc');
+                    arrow.textContent = currentSort.order === 'asc' ? '▲' : '▼';
+                } else {
+                    btn.classList.remove('asc');
+                    arrow.textContent = '▲';
+                }
+            });
         })
         .catch(error => console.error('Error:', error));
 }
 
+// Add this event listener to handle sorting
+document.querySelector('table thead').addEventListener('click', function(e) {
+    const sortBtn = e.target.closest('.sort-btn');
+    if (sortBtn) {
+        const field = sortBtn.dataset.sort;
+        if (currentSort.field === field) {
+            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { field, order: 'asc' };
+        }
+        updateReports();
+    }
+});
+
+// Keep the existing editReport and saveEdit functions
 function editReport(id, employeeName, taskName, taskLocation, totalHours, totalMinutes) {
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-employee-name').value = employeeName;
@@ -76,21 +103,6 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         saveEdit();
     });
-
-    document.querySelector('table thead').addEventListener('click', function(e) {
-        if (e.target.classList.contains('sortable')) {
-            const field = e.target.dataset.sort;
-            if (currentSort.field === field) {
-                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort = { field, order: 'asc' };
-            }
-            updateReports();
-        }
-    });
-
-    // Update reports every 30 seconds
-    setInterval(updateReports, 30000);
 
     // Initial update
     updateReports();
