@@ -73,16 +73,11 @@ document.querySelector('table thead').addEventListener('click', function(e) {
     }
 });
 
-// Add event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('edit-modal');
     const closeBtn = editModal.querySelector('.close');
     const editForm = document.getElementById('edit-form');
-    const resetSortBtn = document.createElement('button');
-    resetSortBtn.textContent = 'Reset Sorting';
-    resetSortBtn.classList.add('btn');
-    resetSortBtn.addEventListener('click', resetSorting);
-    document.querySelector('.controls').appendChild(resetSortBtn);
+    const resetSortBtn = document.getElementById('reset-sort-btn');
 
     closeBtn.addEventListener('click', function() {
         editModal.style.display = 'none';
@@ -93,8 +88,62 @@ document.addEventListener('DOMContentLoaded', function() {
         saveEdit();
     });
 
+    resetSortBtn.addEventListener('click', resetSorting);
+
     // Initial update
     updateReports();
 });
 
-// Keep the existing editReport, saveEdit, and deleteReport functions
+function editReport(id, employeeName, taskName, taskLocation, totalHours, totalMinutes) {
+    const editModal = document.getElementById('edit-modal');
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-employee-name').value = employeeName;
+    document.getElementById('edit-task-name').value = taskName;
+    document.getElementById('edit-task-location').value = taskLocation;
+    document.getElementById('edit-total-hours').value = totalHours;
+    document.getElementById('edit-total-minutes').value = totalMinutes;
+    editModal.style.display = 'block';
+}
+
+function saveEdit() {
+    const id = document.getElementById('edit-id').value;
+    const totalHours = document.getElementById('edit-total-hours').value;
+    const totalMinutes = document.getElementById('edit-total-minutes').value;
+
+    fetch('/api/reports/edit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, total_hours: totalHours, total_minutes: totalMinutes }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('edit-modal').style.display = 'none';
+            cachedData = null;
+            updateReports();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteReport(id) {
+    if (confirm('Are you sure you want to delete this report?')) {
+        fetch(`/api/reports/delete/${id}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                cachedData = null;
+                updateReports();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
