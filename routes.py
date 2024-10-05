@@ -81,7 +81,7 @@ def init_routes(app):
     def employee_check_in():
         data = request.json
         employee = Employee.query.filter_by(employee_id=data['employee_id']).first()
-        task = Task.query.filter_by(task_id=data['task_id']).first()
+        task = Task.query.filter_by(barcode=data['barcode']).first()
         
         if employee and task:
             time_log = TimeLog(employee_id=employee.id, task_id=task.id, status='checked_in')
@@ -89,7 +89,7 @@ def init_routes(app):
             db.session.commit()
             return jsonify({'status': 'success', 'message': 'Check-in successful'})
         else:
-            return jsonify({'status': 'error', 'message': 'Invalid employee or task ID'})
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID or barcode'})
 
     @app.route('/api/employee/check_out', methods=['POST'])
     def employee_check_out():
@@ -171,10 +171,8 @@ def init_routes(app):
 
         if scanned_value.startswith('E'):
             return handle_employee_scan(scanned_value)
-        elif scanned_value.startswith('T'):
-            return handle_task_scan(scanned_value)
         else:
-            return jsonify({'status': 'error', 'message': 'Invalid scan format'})
+            return handle_task_scan(scanned_value)
 
     def handle_employee_scan(employee_id):
         employee = Employee.query.filter_by(employee_id=employee_id).first()
@@ -191,19 +189,16 @@ def init_routes(app):
             return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked out successfully'})
         else:
             # Check in
-            new_time_log = TimeLog(employee_id=employee.id, status='checked_in')
-            db.session.add(new_time_log)
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked in successfully'})
+            return jsonify({'status': 'success', 'message': f'Employee {employee.name} scanned. Please scan a task barcode to check in.'})
 
-    def handle_task_scan(task_id):
-        task = Task.query.filter_by(task_id=task_id).first()
+    def handle_task_scan(barcode):
+        task = Task.query.filter_by(barcode=barcode).first()
         if not task:
             return jsonify({'status': 'error', 'message': 'Task not found'})
 
         active_time_log = TimeLog.query.filter_by(end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
         if not active_time_log:
-            return jsonify({'status': 'error', 'message': 'No active employee check-in found'})
+            return jsonify({'status': 'error', 'message': 'No active employee check-in found. Please scan an employee ID first.'})
 
         if active_time_log.task_id == task.id:
             # Stop task
@@ -218,4 +213,3 @@ def init_routes(app):
             db.session.add(new_time_log)
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Task {task.name} started successfully'})
-

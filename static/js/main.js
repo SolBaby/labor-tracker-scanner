@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (scannedValue.startsWith('E')) {
                     document.getElementById('employee-id').value = scannedValue;
                     document.getElementById('employee-id-out').value = scannedValue;
-                } else if (scannedValue.startsWith('T')) {
-                    document.getElementById('task-id').value = scannedValue;
+                } else {
+                    document.getElementById('barcode').value = scannedValue;
                 }
                 this.value = '';
             }
@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
         checkInForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const employeeId = document.getElementById('employee-id').value;
-            const taskId = document.getElementById('task-id').value;
-            checkIn(employeeId, taskId);
+            const barcode = document.getElementById('barcode').value;
+            checkIn(employeeId, barcode);
         });
     }
 
@@ -67,13 +67,13 @@ function sendScanToServer(scannedValue) {
     });
 }
 
-function checkIn(employeeId, taskId) {
+function checkIn(employeeId, barcode) {
     fetch('/api/employee/check_in', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ employee_id: employeeId, task_id: taskId }),
+        body: JSON.stringify({ employee_id: employeeId, barcode: barcode }),
     })
     .then(response => response.json())
     .then(data => {
