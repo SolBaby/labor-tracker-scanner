@@ -70,38 +70,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function searchEmployees() {
         const searchTerm = searchInput.value.toLowerCase();
-        const rows = employeeTable.querySelectorAll('tbody tr');
-        let visibleRows = 0;
-
-        rows.forEach(row => {
-            const name = row.querySelector('.employee-name').textContent.toLowerCase();
-            const employeeId = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-            const isVisible = name.includes(searchTerm) || employeeId.includes(searchTerm);
-            row.style.display = isVisible ? '' : 'none';
-            if (isVisible) visibleRows++;
-        });
-
-        updatePagination(visibleRows);
+        fetch(`/api/employees/search?term=${searchTerm}&page=${currentPage}`)
+            .then(response => response.json())
+            .then(data => {
+                updateEmployeeTable(data.employees);
+                updatePagination(data.total_pages, data.current_page);
+            })
+            .catch(error => console.error('Error:', error));
     }
 
-    function updatePagination(totalItems) {
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
+    function updateEmployeeTable(employees) {
+        const tbody = employeeTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        employees.forEach(employee => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${employee.id}</td>
+                <td class="employee-name">${employee.name}</td>
+                <td>${employee.employee_id}</td>
+                <td>
+                    <button class="btn edit-btn" data-id="${employee.id}">Edit</button>
+                    <button class="btn delete-btn" data-id="${employee.id}">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updatePagination(totalPages, currentPageNum) {
+        currentPage = currentPageNum;
         currentPageSpan.textContent = currentPage;
         totalPagesSpan.textContent = totalPages;
         prevPageBtn.disabled = currentPage === 1;
         nextPageBtn.disabled = currentPage === totalPages;
-
-        const rows = employeeTable.querySelectorAll('tbody tr');
-        rows.forEach((row, index) => {
-            const shouldShow = index >= (currentPage - 1) * itemsPerPage && index < currentPage * itemsPerPage;
-            row.style.display = shouldShow && row.style.display !== 'none' ? '' : 'none';
-        });
     }
 
     function changePage(direction) {
         currentPage += direction;
-        const visibleRows = Array.from(employeeTable.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none').length;
-        updatePagination(visibleRows);
+        searchEmployees();
     }
 
     function addEmployee(name, employeeId) {
@@ -114,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.status === 'success') {
                 closeModal();
-                location.reload();
+                searchEmployees();
             } else {
                 alert(data.message);
             }
@@ -132,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.status === 'success') {
                 closeModal();
-                location.reload();
+                searchEmployees();
             } else {
                 alert(data.message);
             }
@@ -147,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                location.reload();
+                searchEmployees();
             } else {
                 alert(data.message);
             }
@@ -155,6 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error:', error));
     }
 
-    // Initialize pagination
-    updatePagination(employeeTable.querySelectorAll('tbody tr').length);
+    // Initialize employee list
+    searchEmployees();
 });
