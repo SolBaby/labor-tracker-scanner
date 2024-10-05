@@ -61,6 +61,7 @@ function sendScanToServer(scannedValue) {
     .then(data => {
         const scanResult = document.getElementById('scan-result');
         scanResult.textContent = data.message;
+        document.getElementById('barcode-input').value = ''; // Clear the input field
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -78,6 +79,8 @@ function checkIn(employeeId, barcode) {
     .then(response => response.json())
     .then(data => {
         alert(data.message);
+        document.getElementById('employee-id').value = ''; // Clear employee ID input
+        document.getElementById('barcode').value = ''; // Clear barcode input
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -95,6 +98,7 @@ function checkOut(employeeId) {
     .then(response => response.json())
     .then(data => {
         alert(data.message);
+        document.getElementById('employee-id-out').value = ''; // Clear employee ID input for check-out
     })
     .catch((error) => {
         console.error('Error:', error);
