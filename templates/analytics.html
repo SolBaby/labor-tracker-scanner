@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Analytics Dashboard</h1>
+
+<div class="analytics-container">
+    <div class="chart-container">
+        <h2>Employee Productivity</h2>
+        <canvas id="productivityChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <h2>Task Completion</h2>
+        <canvas id="taskCompletionChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

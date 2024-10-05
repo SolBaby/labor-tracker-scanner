@@ -1,8 +1,8 @@
-from flask import render_template, request, jsonify
-from models import Employee, Task, TimeLog
-from datetime import datetime
-from sqlalchemy import func, desc
+from flask import jsonify, request, render_template
 from app import db
+from models import Employee, Task, TimeLog
+from sqlalchemy import func
+from datetime import timedelta, datetime
 
 def init_routes(app):
     @app.route('/')
@@ -11,181 +11,51 @@ def init_routes(app):
 
     @app.route('/employee_management')
     def employee_management():
-        return render_template('employee_management.html')
-
-    @app.route('/api/employees/search')
-    def search_employees():
-        search_term = request.args.get('term', '')
-        department = request.args.get('department', '')
-        page = request.args.get('page', 1, type=int)
-        sort_field = request.args.get('sort_field', 'id')
-        sort_order = request.args.get('sort_order', 'asc')
-        per_page = 10
-
-        query = Employee.query
-
-        if search_term:
-            query = query.filter(
-                (Employee.name.ilike(f'%{search_term}%')) |
-                (Employee.employee_id.ilike(f'%{search_term}%'))
-            )
-
-        if department:
-            query = query.filter(Employee.department == department)
-
-        if sort_order == 'desc':
-            query = query.order_by(desc(getattr(Employee, sort_field)))
-        else:
-            query = query.order_by(getattr(Employee, sort_field))
-
-        employees = query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        return jsonify({
-            'employees': [{'id': e.id, 'name': e.name, 'employee_id': e.employee_id, 'department': e.department} for e in employees.items],
-            'total_pages': employees.pages,
-            'current_page': page
-        })
+        employees = Employee.query.all()
+        return render_template('employee_management.html', employees=employees)
 
     @app.route('/task_management')
     def task_management():
         tasks = Task.query.all()
         return render_template('task_management.html', tasks=tasks)
 
-    @app.route('/api/employee/add', methods=['POST'])
-    def add_employee():
-        data = request.json
-        new_employee = Employee(name=data['name'], employee_id=data['employee_id'], department=data['department'])
-        db.session.add(new_employee)
-        try:
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': 'Employee added successfully'})
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'status': 'error', 'message': str(e)})
-
-    @app.route('/api/employee/update/<int:id>', methods=['PUT'])
-    def update_employee(id):
-        data = request.json
-        employee = Employee.query.get(id)
-        if employee:
-            employee.name = data['name']
-            employee.employee_id = data['employee_id']
-            employee.department = data['department']
-            try:
-                db.session.commit()
-                return jsonify({'status': 'success', 'message': 'Employee updated successfully'})
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'status': 'error', 'message': str(e)})
-        return jsonify({'status': 'error', 'message': 'Employee not found'})
-
-    @app.route('/api/employee/delete/<int:id>', methods=['DELETE'])
-    def delete_employee(id):
-        employee = Employee.query.get(id)
-        if employee:
-            db.session.delete(employee)
-            try:
-                db.session.commit()
-                return jsonify({'status': 'success', 'message': 'Employee deleted successfully'})
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'status': 'error', 'message': str(e)})
-        return jsonify({'status': 'error', 'message': 'Employee not found'})
-
-    @app.route('/api/employee/check_in', methods=['POST'])
-    def employee_check_in():
-        data = request.json
-        employee = Employee.query.filter_by(employee_id=data['employee_id']).first()
-        task = Task.query.filter_by(barcode=data['barcode']).first()
-        
-        if employee and task:
-            time_log = TimeLog(employee_id=employee.id, task_id=task.id, status='checked_in')
-            db.session.add(time_log)
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': 'Check-in successful'})
-        else:
-            return jsonify({'status': 'error', 'message': 'Invalid employee ID or barcode'})
-
-    @app.route('/api/employee/check_out', methods=['POST'])
-    def employee_check_out():
-        data = request.json
-        employee = Employee.query.filter_by(employee_id=data['employee_id']).first()
-        
-        if employee:
-            time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
-            if time_log:
-                time_log.end_time = datetime.utcnow()
-                time_log.duration = time_log.end_time - time_log.start_time
-                time_log.status = 'checked_out'
-                db.session.commit()
-                return jsonify({'status': 'success', 'message': 'Check-out successful'})
-            else:
-                return jsonify({'status': 'error', 'message': 'No active check-in found'})
-        else:
-            return jsonify({'status': 'error', 'message': 'Invalid employee ID'})
-
-    @app.route('/api/task/add', methods=['POST'])
-    def add_task():
-        data = request.json
-        new_task = Task(name=data['name'], task_id=data['task_id'], barcode=data['barcode'], location=data['location'])
-        db.session.add(new_task)
-        try:
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': 'Task added successfully'})
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'status': 'error', 'message': str(e)})
-
-    @app.route('/api/task/update/<int:id>', methods=['PUT'])
-    def update_task(id):
-        data = request.json
-        print(f"Received data for task update: {data}")  # Debug print
-        task = Task.query.get(id)
-        if task:
-            task.name = data['name']
-            task.task_id = data['task_id']
-            task.barcode = data['barcode']
-            task.location = data['location']
-            try:
-                db.session.commit()
-                print(f"Task updated successfully: {task.id}")  # Debug print
-                return jsonify({'status': 'success', 'message': 'Task updated successfully'})
-            except Exception as e:
-                db.session.rollback()
-                print(f"Error updating task: {str(e)}")  # Debug print
-                return jsonify({'status': 'error', 'message': str(e)})
-        print(f"Task not found: {id}")  # Debug print
-        return jsonify({'status': 'error', 'message': 'Task not found'})
-
-    @app.route('/api/task/delete/<int:id>', methods=['DELETE'])
-    def delete_task(id):
-        task = Task.query.get(id)
-        if task:
-            db.session.delete(task)
-            try:
-                db.session.commit()
-                return jsonify({'status': 'success', 'message': 'Task deleted successfully'})
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'status': 'error', 'message': str(e)})
-        return jsonify({'status': 'error', 'message': 'Task not found'})
-
     @app.route('/reports')
     def reports():
         return render_template('reports.html')
 
+    @app.route('/api/reports/edit', methods=['POST'])
+    def edit_report():
+        data = request.json
+        time_log_id = data['id']
+        total_minutes = int(data['total_minutes'])
+        total_seconds = int(data['total_seconds'])
+
+        time_log = TimeLog.query.get(time_log_id)
+        if time_log:
+            new_duration = timedelta(minutes=total_minutes, seconds=total_seconds)
+            time_log.update_duration(new_duration)
+            try:
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'Report updated successfully'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'status': 'error', 'message': str(e)})
+        return jsonify({'status': 'error', 'message': 'Time log not found'})
+
     @app.route('/api/reports/data')
     def reports_data():
         employee_hours = db.session.query(
+            TimeLog.id.label('id'),
             Employee.name.label('employee_name'),
             Task.name.label('task_name'),
             Task.location.label('task_location'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60).label('total_minutes'),
             func.sum(func.extract('epoch', TimeLog.duration) % 60).label('total_seconds')
-        ).select_from(Employee).join(TimeLog).join(Task).group_by(Employee.id, Task.id).all()
+        ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id).all()
 
         return jsonify([
             {
+                'id': record.id,
                 'employee_name': record.employee_name,
                 'task_name': record.task_name,
                 'task_location': record.task_location,
@@ -195,48 +65,42 @@ def init_routes(app):
             for record in employee_hours
         ])
 
-    @app.route('/api/scan', methods=['POST'])
-    def handle_scan():
-        data = request.json
-        scanned_value = data['scanned_value']
+    @app.route('/analytics')
+    def analytics_dashboard():
+        return render_template('analytics.html')
 
-        if scanned_value.startswith('E'):
-            return handle_employee_scan(scanned_value)
-        else:
-            return handle_task_scan(scanned_value)
+    @app.route('/api/analytics/productivity')
+    def productivity_analytics():
+        productivity_data = db.session.query(
+            Employee.name.label('employee_name'),
+            func.avg(func.extract('epoch', TimeLog.duration) / 60).label('avg_task_duration'),
+            func.count(TimeLog.id).label('completed_tasks')
+        ).join(TimeLog).filter(TimeLog.status == 'checked_out').group_by(Employee.id).all()
 
-    def handle_employee_scan(employee_id):
-        employee = Employee.query.filter_by(employee_id=employee_id).first()
-        if not employee:
-            return jsonify({'status': 'error', 'message': 'Employee not found'})
+        return jsonify([
+            {
+                'employee_name': record.employee_name,
+                'avg_task_duration': float(record.avg_task_duration) if record.avg_task_duration is not None else 0,
+                'completed_tasks': int(record.completed_tasks)
+            }
+            for record in productivity_data
+        ])
 
-        active_time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
-        if active_time_log:
-            active_time_log.end_time = datetime.utcnow()
-            active_time_log.duration = active_time_log.end_time - active_time_log.start_time
-            active_time_log.status = 'checked_out'
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked out successfully'})
-        else:
-            return jsonify({'status': 'success', 'message': f'Employee {employee.name} scanned. Please scan a task barcode to check in.'})
+    @app.route('/api/analytics/task_completion')
+    def task_completion_analytics():
+        task_completion_data = db.session.query(
+            Task.name.label('task_name'),
+            func.count(TimeLog.id).label('completion_count'),
+            func.avg(func.extract('epoch', TimeLog.duration) / 60).label('avg_duration')
+        ).join(TimeLog).filter(TimeLog.status == 'checked_out').group_by(Task.id).all()
 
-    def handle_task_scan(barcode):
-        task = Task.query.filter_by(barcode=barcode).first()
-        if not task:
-            return jsonify({'status': 'error', 'message': 'Task not found'})
+        return jsonify([
+            {
+                'task_name': record.task_name,
+                'completion_count': int(record.completion_count),
+                'avg_duration': float(record.avg_duration) if record.avg_duration is not None else 0
+            }
+            for record in task_completion_data
+        ])
 
-        active_time_log = TimeLog.query.filter_by(end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
-        if not active_time_log:
-            return jsonify({'status': 'error', 'message': 'No active employee check-in found. Please scan an employee ID first.'})
-
-        if active_time_log.task_id == task.id:
-            active_time_log.end_time = datetime.utcnow()
-            active_time_log.duration = active_time_log.end_time - active_time_log.start_time
-            active_time_log.status = 'checked_out'
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': f'Task {task.name} stopped successfully'})
-        else:
-            new_time_log = TimeLog(employee_id=active_time_log.employee_id, task_id=task.id, status='checked_in')
-            db.session.add(new_time_log)
-            db.session.commit()
-            return jsonify({'status': 'success', 'message': f'Task {task.name} started successfully'})
+    return app

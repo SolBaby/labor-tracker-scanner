@@ -1,5 +1,5 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,3 +24,11 @@ class TimeLog(db.Model):
     end_time = db.Column(db.DateTime)
     duration = db.Column(db.Interval)
     status = db.Column(db.String(20), nullable=False, default='checked_in')
+
+    def update_duration(self, new_duration):
+        if isinstance(new_duration, timedelta):
+            self.duration = new_duration
+            if self.start_time:
+                self.end_time = self.start_time + new_duration
+        else:
+            raise ValueError("new_duration must be a timedelta object")
