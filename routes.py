@@ -173,7 +173,7 @@ def init_routes(app):
             Task.location.label('task_location'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60).label('total_minutes'),
             func.sum(func.extract('epoch', TimeLog.duration) % 60).label('total_seconds')
-        ).join(TimeLog).join(Task).group_by(Employee.id, Task.id).all()
+        ).select_from(Employee).join(TimeLog).join(Task).group_by(Employee.id, Task.id).all()
 
         return render_template('reports.html', employee_hours=employee_hours)
 
