@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const scanResult = document.getElementById('scan-result');
     const employeeIdInput = document.getElementById('employee-id');
     const taskBarcodeInput = document.getElementById('task-barcode');
+    const lunchBreakForm = document.getElementById('lunch-break-form');
 
     // Focus on Employee ID input when the page loads
     if (employeeIdInput) {
@@ -53,6 +54,14 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const employeeId = document.getElementById('employee-id-out').value;
             checkOut(employeeId);
+        });
+    }
+
+    if (lunchBreakForm) {
+        lunchBreakForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const employeeId = document.getElementById('lunch-break-employee-id').value;
+            handleLunchBreak(employeeId);
         });
     }
 });
@@ -121,5 +130,46 @@ function checkOut(employeeId) {
     .catch((error) => {
         console.error('Error:', error);
         alert('An error occurred during check-out. Please try again.');
+    });
+}
+
+function handleLunchBreak(employeeId) {
+    fetch('/api/employee/lunch_check_in', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ employee_id: employeeId }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            document.getElementById('lunch-break-employee-id').value = '';
+        } else if (data.message === 'No active lunch break found') {
+            // If no active lunch break, try to check out
+            return fetch('/api/employee/lunch_check_out', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ employee_id: employeeId }),
+            });
+        } else {
+            alert(data.message);
+        }
+    })
+    .then(response => response ? response.json() : null)
+    .then(data => {
+        if (data && data.status === 'success') {
+            alert(data.message);
+            document.getElementById('lunch-break-employee-id').value = '';
+        } else if (data) {
+            alert(data.message);
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred during lunch break action. Please try again.');
     });
 }

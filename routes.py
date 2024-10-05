@@ -74,6 +74,59 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/api/employee/lunch_check_in', methods=['POST'])
+    def employee_lunch_check_in():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        time_log.lunch_break_start = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': 'Lunch break check-in successful'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    @app.route('/api/employee/lunch_check_out', methods=['POST'])
+    def employee_lunch_check_out():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        if not time_log.lunch_break_start:
+            return jsonify({'status': 'error', 'message': 'No active lunch break found'}), 400
+        
+        time_log.lunch_break_end = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': 'Lunch break check-out successful'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/reports/edit', methods=['POST'])
     def edit_report():
         data = request.json
@@ -87,6 +140,7 @@ def init_routes(app):
             time_log.update_duration(new_duration)
             try:
                 db.session.commit()
+                emit_analytics_update(app.extensions['socketio'])
                 return jsonify({'status': 'success', 'message': 'Report updated successfully'})
             except Exception as e:
                 db.session.rollback()
@@ -100,6 +154,7 @@ def init_routes(app):
             try:
                 db.session.delete(time_log)
                 db.session.commit()
+                emit_analytics_update(app.extensions['socketio'])
                 return jsonify({'status': 'success', 'message': 'Report deleted successfully'})
             except Exception as e:
                 db.session.rollback()
