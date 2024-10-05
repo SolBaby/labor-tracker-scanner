@@ -103,3 +103,27 @@ th {
     bottom: 0;
     width: 100%;
 }
+
+.sort-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px;
+}
+
+.sort-arrow {
+    margin-left: 5px;
+}
+
+.sort-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.sort-btn.asc .sort-arrow {
+    transform: rotate(180deg);
+}
