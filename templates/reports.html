@@ -14,14 +14,9 @@
         </tr>
     </thead>
     <tbody>
-        {% for record in employee_hours %}
-        <tr>
-            <td>{{ record.employee_name }}</td>
-            <td>{{ record.task_name }}</td>
-            <td>{{ record.task_location }}</td>
-            <td>{{ record.total_minutes }} minutes, {{ record.total_seconds }} seconds</td>
-        </tr>
-        {% endfor %}
+        <!-- Data will be dynamically inserted here -->
     </tbody>
 </table>
+
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
 {% endblock %}

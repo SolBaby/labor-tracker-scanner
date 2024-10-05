@@ -167,6 +167,10 @@ def init_routes(app):
 
     @app.route('/reports')
     def reports():
+        return render_template('reports.html')
+
+    @app.route('/api/reports/data')
+    def reports_data():
         employee_hours = db.session.query(
             Employee.name.label('employee_name'),
             Task.name.label('task_name'),
@@ -175,7 +179,16 @@ def init_routes(app):
             func.sum(func.extract('epoch', TimeLog.duration) % 60).label('total_seconds')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(Employee.id, Task.id).all()
 
-        return render_template('reports.html', employee_hours=employee_hours)
+        return jsonify([
+            {
+                'employee_name': record.employee_name,
+                'task_name': record.task_name,
+                'task_location': record.task_location,
+                'total_minutes': int(record.total_minutes),
+                'total_seconds': int(record.total_seconds)
+            }
+            for record in employee_hours
+        ])
 
     @app.route('/api/scan', methods=['POST'])
     def handle_scan():
@@ -194,14 +207,12 @@ def init_routes(app):
 
         active_time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
         if active_time_log:
-            # Check out
             active_time_log.end_time = datetime.utcnow()
             active_time_log.duration = active_time_log.end_time - active_time_log.start_time
             active_time_log.status = 'checked_out'
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Employee {employee.name} checked out successfully'})
         else:
-            # Check in
             return jsonify({'status': 'success', 'message': f'Employee {employee.name} scanned. Please scan a task barcode to check in.'})
 
     def handle_task_scan(barcode):
@@ -214,14 +225,12 @@ def init_routes(app):
             return jsonify({'status': 'error', 'message': 'No active employee check-in found. Please scan an employee ID first.'})
 
         if active_time_log.task_id == task.id:
-            # Stop task
             active_time_log.end_time = datetime.utcnow()
             active_time_log.duration = active_time_log.end_time - active_time_log.start_time
             active_time_log.status = 'checked_out'
             db.session.commit()
             return jsonify({'status': 'success', 'message': f'Task {task.name} stopped successfully'})
         else:
-            # Start new task
             new_time_log = TimeLog(employee_id=active_time_log.employee_id, task_id=task.id, status='checked_in')
             db.session.add(new_time_log)
             db.session.commit()
