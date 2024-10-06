@@ -24,6 +24,17 @@ def init_routes(app):
     def reports():
         return render_template('reports.html')
 
+    @app.route('/api/scan', methods=['POST'])
+    def handle_scan():
+        data = request.json
+        scanned_value = data.get('scanned_value')
+        if scanned_value.startswith('E'):
+            return jsonify({'status': 'success', 'type': 'employee'})
+        elif scanned_value.startswith('T'):
+            return jsonify({'status': 'success', 'type': 'task'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid barcode'})
+
     @app.route('/employee_history/<string:employee_id>')
     def employee_history(employee_id):
         employee = Employee.query.filter_by(employee_id=employee_id).first()

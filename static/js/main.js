@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const lunchBreakForm = document.getElementById('lunch-break-form');
     const lunchBreakStatus = document.getElementById('lunch-break-status');
 
-    // Focus on Employee ID input when the page loads
     if (employeeIdInput) {
         employeeIdInput.focus();
     }
@@ -75,7 +74,7 @@ function sendScanToServer(scannedValue) {
         } else {
             showNotification(data.message, 'error');
         }
-        document.getElementById('barcode-input').value = ''; // Clear the input field
+        document.getElementById('barcode-input').value = '';
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -85,10 +84,8 @@ function sendScanToServer(scannedValue) {
 
 function handleScan(scannedValue) {
     if (scannedValue.startsWith('E')) {
-        // Employee ID scanned
         window.location.href = `/employee_history/${scannedValue}`;
     } else if (scannedValue.startsWith('T')) {
-        // Task ID scanned
         window.location.href = `/task_history/${scannedValue}`;
     } else {
         showNotification('Invalid barcode scanned', 'error');
