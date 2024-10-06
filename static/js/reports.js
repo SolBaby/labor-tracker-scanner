@@ -4,11 +4,6 @@ let cachedData = null;
 function updateReports() {
     const sortParams = currentSort.field ? `sort_field=${currentSort.field}&sort_order=${currentSort.order}` : '';
     
-    if (cachedData && currentSort.field) {
-        renderReports(cachedData);
-        return;
-    }
-
     fetch(`/api/reports/data?${sortParams}`)
         .then(response => response.json())
         .then(data => {

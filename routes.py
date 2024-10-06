@@ -5,20 +5,14 @@ from sqlalchemy import func, or_
 from datetime import timedelta, datetime
 from analytics import init_analytics, emit_analytics_update
 import os
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
-# Initialize Twilio client only if credentials are available
-twilio_client = None
-try:
-    from twilio.rest import Client
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    twilio_phone_number = os.environ.get('TWILIO_PHONE_NUMBER')
-    if account_sid and auth_token:
-        twilio_client = Client(account_sid, auth_token)
-except ImportError:
-    print("Twilio library not installed. SMS notifications will not be available.")
-except Exception as e:
-    print(f"Error initializing Twilio client: {str(e)}")
+# Initialize Twilio client
+account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+twilio_phone_number = os.environ.get('TWILIO_PHONE_NUMBER')
+twilio_client = Client(account_sid, auth_token) if account_sid and auth_token else None
 
 def init_routes(app):
     @app.route('/')
@@ -127,7 +121,7 @@ def init_routes(app):
                         to=employee.phone_number
                     )
                     return jsonify({'status': 'success', 'message': 'Check-out successful and SMS notification sent'}), 200
-                except Exception as e:
+                except TwilioRestException as e:
                     print(f"Error sending SMS: {str(e)}")
                     return jsonify({'status': 'success', 'message': 'Check-out successful, but SMS notification failed'}), 200
             else:
@@ -217,5 +211,24 @@ def init_routes(app):
     @app.route('/analytics')
     def analytics_dashboard():
         return render_template('analytics.html')
+
+    @app.route('/api/reports/data')
+    def get_report_data():
+        time_logs = TimeLog.query.order_by(TimeLog.start_time.desc()).all()
+        report_data = []
+        for log in time_logs:
+            report_data.append({
+                'id': log.id,
+                'employee_name': log.employee.name,
+                'task_name': log.task.name,
+                'task_location': log.task.location,
+                'check_in_time': log.start_time.isoformat() if log.start_time else None,
+                'check_out_time': log.end_time.isoformat() if log.end_time else None,
+                'lunch_break_start': log.lunch_break_start.isoformat() if log.lunch_break_start else None,
+                'lunch_break_end': log.lunch_break_end.isoformat() if log.lunch_break_end else None,
+                'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
+                'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
+            })
+        return jsonify(report_data)
 
     return app
