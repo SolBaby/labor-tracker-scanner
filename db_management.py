@@ -41,6 +41,15 @@ def delete_employee(id):
     query = "DELETE FROM employee WHERE id = %s;"
     execute_query(query, (id,))
 
+def get_database_schema():
+    query = """
+    SELECT table_name, column_name, data_type, is_nullable
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+    ORDER BY table_name, ordinal_position;
+    """
+    return execute_query(query)
+
 def main():
     while True:
         print("\n1. List all employees")
@@ -48,9 +57,10 @@ def main():
         print("3. Update employee")
         print("4. Delete employee")
         print("5. Execute custom SQL query")
-        print("6. Exit")
+        print("6. Show database schema")
+        print("7. Exit")
         
-        choice = input("Enter your choice (1-6): ")
+        choice = input("Enter your choice (1-7): ")
         
         if choice == '1':
             employees = list_employees()
@@ -75,12 +85,19 @@ def main():
             print("Employee deleted successfully.")
         elif choice == '5':
             query = input("Enter your SQL query: ")
-            result = execute_query(query)
-            if result:
-                for row in result:
-                    print(row)
-            print("Query executed successfully.")
+            try:
+                result = execute_query(query)
+                if result:
+                    for row in result:
+                        print(row)
+                print("Query executed successfully.")
+            except Exception as e:
+                print(f"Error executing query: {str(e)}")
         elif choice == '6':
+            schema = get_database_schema()
+            for table_info in schema:
+                print(f"Table: {table_info[0]}, Column: {table_info[1]}, Type: {table_info[2]}, Nullable: {table_info[3]}")
+        elif choice == '7':
             print("Exiting...")
             break
         else:
