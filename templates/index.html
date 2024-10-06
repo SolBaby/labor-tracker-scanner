@@ -5,17 +5,12 @@
 
 <div class="container">
     <div class="row">
-        <div class="col yellow-box">
+        <div class="col green-box">
             <form id="check-in-form">
                 <h2>Employee Check-In</h2>
                 <input type="text" id="employee-id" placeholder="Employee ID" required>
                 <input type="text" id="task-barcode" placeholder="Task Barcode" required>
                 <button type="submit" class="btn">Check In</button>
-            </form>
-            <form id="check-out-form">
-                <h2>Employee Check-Out</h2>
-                <input type="text" id="employee-id-out" name="employee_id" placeholder="Employee ID" required>
-                <button type="submit" class="btn">Check Out</button>
             </form>
         </div>
     </div>
@@ -43,6 +38,16 @@
                 </form>
                 <div id="lunch-break-status"></div>
             </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col red-box">
+            <form id="check-out-form">
+                <h2>Employee Check-Out</h2>
+                <input type="text" id="employee-id-out" name="employee_id" placeholder="Employee ID" required>
+                <button type="submit" class="btn">Check Out</button>
+            </form>
         </div>
     </div>
 </div>

@@ -243,6 +243,32 @@ tr:nth-child(even) {
     color: #4b0082;
 }
 
+.green-box {
+    background-color: #d4edda;
+    border: 2px solid #28a745;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.green-box h2 {
+    color: #155724;
+}
+
+.red-box {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.red-box h2 {
+    color: #721c24;
+}
+
 @media (max-width: 768px) {
     .row {
         flex-direction: column;
