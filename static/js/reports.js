@@ -23,6 +23,7 @@ function renderReports(data) {
     tbody.innerHTML = '';
     data.forEach(record => {
         const row = document.createElement('tr');
+        row.dataset.id = record.id;
         row.innerHTML = `
             <td>${record.employee_name}</td>
             <td>${record.task_name}</td>
@@ -62,25 +63,25 @@ function resetSorting() {
     updateReports();
 }
 
-document.querySelector('table thead').addEventListener('click', function(e) {
-    const sortBtn = e.target.closest('.sort-btn');
-    if (sortBtn) {
-        const field = sortBtn.dataset.sort;
-        if (currentSort.field === field) {
-            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort = { field, order: 'asc' };
-        }
-        cachedData = null;
-        updateReports();
-    }
-});
-
 document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('edit-modal');
     const closeBtn = editModal.querySelector('.close');
     const editForm = document.getElementById('edit-form');
     const resetSortBtn = document.getElementById('reset-sort-btn');
+
+    document.querySelector('table thead').addEventListener('click', function(e) {
+        const sortBtn = e.target.closest('.sort-btn');
+        if (sortBtn) {
+            const field = sortBtn.dataset.sort;
+            if (currentSort.field === field) {
+                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { field, order: 'asc' };
+            }
+            cachedData = null;
+            updateReports();
+        }
+    });
 
     closeBtn.addEventListener('click', function() {
         editModal.style.display = 'none';
@@ -168,3 +169,6 @@ function deleteReport(id) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+// Initial update
+updateReports();
