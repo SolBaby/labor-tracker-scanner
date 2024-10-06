@@ -150,16 +150,23 @@ def init_routes(app):
         
         if time_log.bathroom_break_start and not time_log.bathroom_break_end:
             time_log.bathroom_break_end = datetime.utcnow()
+            bathroom_break_duration = time_log.bathroom_break_end - time_log.bathroom_break_start
             bathroom_break_status = 'Out'
         else:
             time_log.bathroom_break_start = datetime.utcnow()
             time_log.bathroom_break_end = None
+            bathroom_break_duration = None
             bathroom_break_status = 'In'
         
         try:
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
-            return jsonify({'status': 'success', 'message': f'Bathroom break {bathroom_break_status}', 'bathroom_break_status': bathroom_break_status}), 200
+            return jsonify({
+                'status': 'success',
+                'message': f'Bathroom break {bathroom_break_status}',
+                'bathroom_break_status': bathroom_break_status,
+                'bathroom_break_duration': str(bathroom_break_duration) if bathroom_break_duration else None
+            }), 200
         except Exception as e:
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -251,6 +258,10 @@ def init_routes(app):
         time_logs = TimeLog.query.order_by(TimeLog.start_time.desc()).all()
         report_data = []
         for log in time_logs:
+            bathroom_break_duration = None
+            if log.bathroom_break_start and log.bathroom_break_end:
+                bathroom_break_duration = (log.bathroom_break_end - log.bathroom_break_start).total_seconds() / 60
+            
             report_data.append({
                 'id': log.id,
                 'employee_name': log.employee.name,
@@ -260,6 +271,9 @@ def init_routes(app):
                 'check_out_time': log.end_time.isoformat() if log.end_time else None,
                 'lunch_break_start': log.lunch_break_start.isoformat() if log.lunch_break_start else None,
                 'lunch_break_end': log.lunch_break_end.isoformat() if log.lunch_break_end else None,
+                'bathroom_break_start': log.bathroom_break_start.isoformat() if log.bathroom_break_start else None,
+                'bathroom_break_end': log.bathroom_break_end.isoformat() if log.bathroom_break_end else None,
+                'bathroom_break_duration': round(bathroom_break_duration, 2) if bathroom_break_duration is not None else None,
                 'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
                 'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
             })
