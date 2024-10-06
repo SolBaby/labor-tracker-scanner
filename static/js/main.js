@@ -77,13 +77,29 @@ function sendScanToServer(scannedValue) {
     })
     .then(response => response.json())
     .then(data => {
-        const scanResult = document.getElementById('scan-result');
-        scanResult.textContent = data.message;
+        if (data.status === 'success') {
+            handleScan(scannedValue);
+        } else {
+            showNotification(data.message, 'error');
+        }
         document.getElementById('barcode-input').value = ''; // Clear the input field
     })
     .catch((error) => {
         console.error('Error:', error);
+        showNotification('An error occurred while processing the scan', 'error');
     });
+}
+
+function handleScan(scannedValue) {
+    if (scannedValue.startsWith('E')) {
+        // Employee ID scanned
+        window.location.href = `/employee_history/${scannedValue}`;
+    } else if (scannedValue.startsWith('T')) {
+        // Task ID scanned
+        window.location.href = `/task_history/${scannedValue}`;
+    } else {
+        showNotification('Invalid barcode scanned', 'error');
+    }
 }
 
 function checkIn(employeeId, taskBarcode) {

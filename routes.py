@@ -24,6 +24,22 @@ def init_routes(app):
     def reports():
         return render_template('reports.html')
 
+    @app.route('/employee_history/<string:employee_id>')
+    def employee_history(employee_id):
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        if employee:
+            time_logs = TimeLog.query.filter_by(employee_id=employee.id).order_by(TimeLog.start_time.desc()).all()
+            return render_template('employee_history.html', employee=employee, time_logs=time_logs)
+        return "Employee not found", 404
+
+    @app.route('/task_history/<string:task_id>')
+    def task_history(task_id):
+        task = Task.query.filter_by(task_id=task_id).first()
+        if task:
+            time_logs = TimeLog.query.filter_by(task_id=task.id).order_by(TimeLog.start_time.desc()).all()
+            return render_template('task_history.html', task=task, time_logs=time_logs)
+        return "Task not found", 404
+
     @app.route('/api/employee/check_in', methods=['POST'])
     def employee_check_in():
         data = request.json

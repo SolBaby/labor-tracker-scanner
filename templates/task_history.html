@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Task History</h1>
+
+<h2>Task Details</h2>
+<p><strong>Name:</strong> {{ task.name }}</p>
+<p><strong>Task ID:</strong> {{ task.task_id }}</p>
+<p><strong>Barcode:</strong> {{ task.barcode }}</p>
+<p><strong>Location:</strong> {{ task.location }}</p>
+
+<h2>Time Logs</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Duration</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in time_logs %}
+        <tr>
+            <td>{{ log.employee.name }}</td>
+            <td>{{ log.start_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ log.end_time.strftime('%Y-%m-%d %H:%M:%S') if log.end_time else 'N/A' }}</td>
+            <td>{{ log.duration if log.duration else 'N/A' }}</td>
+            <td>{{ log.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('index') }}" class="btn">Back to Home</a>
+{% endblock %}
