@@ -83,7 +83,7 @@ function sendScanToServer(scannedValue) {
 }
 
 function handleScan(scannedValue) {
-    if (scannedValue.startsWith('E')) {
+    if (scannedValue.startsWith('E') || !isNaN(scannedValue)) {
         window.location.href = `/employee_history/${scannedValue}`;
     } else if (scannedValue.startsWith('T')) {
         window.location.href = `/task_history/${scannedValue}`;

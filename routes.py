@@ -1,7 +1,7 @@
 from flask import jsonify, request, render_template
 from app import db
 from models import Employee, Task, TimeLog
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import timedelta, datetime
 from analytics import init_analytics, emit_analytics_update
 
@@ -37,7 +37,10 @@ def init_routes(app):
 
     @app.route('/employee_history/<string:employee_id>')
     def employee_history(employee_id):
-        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        employee = Employee.query.filter(
+            (Employee.employee_id == employee_id) | 
+            (Employee.employee_id == 'E' + employee_id)
+        ).first()
         if employee:
             time_logs = TimeLog.query.filter_by(employee_id=employee.id).order_by(TimeLog.start_time.desc()).all()
             return render_template('employee_history.html', employee=employee, time_logs=time_logs)
