@@ -133,6 +133,37 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/api/employee/bathroom_break', methods=['POST'])
+    def handle_bathroom_break():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        if time_log.bathroom_break_start and not time_log.bathroom_break_end:
+            time_log.bathroom_break_end = datetime.utcnow()
+            bathroom_break_status = 'Out'
+        else:
+            time_log.bathroom_break_start = datetime.utcnow()
+            time_log.bathroom_break_end = None
+            bathroom_break_status = 'In'
+        
+        try:
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': f'Bathroom break {bathroom_break_status}', 'bathroom_break_status': bathroom_break_status}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/employees/search')
     def search_employees():
         term = request.args.get('term', '')
