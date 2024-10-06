@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const employeeIdInput = document.getElementById('employee-id');
     const taskBarcodeInput = document.getElementById('task-barcode');
     const lunchBreakForm = document.getElementById('lunch-break-form');
+    const lunchBreakStatus = document.getElementById('lunch-break-status');
 
     // Focus on Employee ID input when the page loads
     if (employeeIdInput) {
@@ -96,17 +97,17 @@ function checkIn(employeeId, taskBarcode) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert(data.message);
+            showNotification(data.message, 'success');
             document.getElementById('employee-id').value = '';
             document.getElementById('task-barcode').value = '';
             document.getElementById('employee-id').focus();
         } else {
-            alert(data.message);
+            showNotification(data.message, 'error');
         }
     })
     .catch((error) => {
         console.error('Error:', error);
-        alert('An error occurred during check-in. Please try again.');
+        showNotification('An error occurred during check-in. Please try again.', 'error');
     });
 }
 
@@ -121,20 +122,20 @@ function checkOut(employeeId) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert(data.message);
+            showNotification(data.message, 'success');
             document.getElementById('employee-id-out').value = '';
         } else {
-            alert(data.message);
+            showNotification(data.message, 'error');
         }
     })
     .catch((error) => {
         console.error('Error:', error);
-        alert('An error occurred during check-out. Please try again.');
+        showNotification('An error occurred during check-out. Please try again.', 'error');
     });
 }
 
 function handleLunchBreak(employeeId) {
-    fetch('/api/employee/lunch_check_in', {
+    fetch('/api/employee/lunch_break', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -144,32 +145,31 @@ function handleLunchBreak(employeeId) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alert(data.message);
+            showNotification(data.message, 'success');
             document.getElementById('lunch-break-employee-id').value = '';
-        } else if (data.message === 'No active lunch break found') {
-            // If no active lunch break, try to check out
-            return fetch('/api/employee/lunch_check_out', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ employee_id: employeeId }),
-            });
+            updateLunchBreakStatus(data.lunch_break_status);
         } else {
-            alert(data.message);
-        }
-    })
-    .then(response => response ? response.json() : null)
-    .then(data => {
-        if (data && data.status === 'success') {
-            alert(data.message);
-            document.getElementById('lunch-break-employee-id').value = '';
-        } else if (data) {
-            alert(data.message);
+            showNotification(data.message, 'error');
         }
     })
     .catch((error) => {
         console.error('Error:', error);
-        alert('An error occurred during lunch break action. Please try again.');
+        showNotification('An error occurred during lunch break action. Please try again.', 'error');
     });
+}
+
+function updateLunchBreakStatus(status) {
+    const lunchBreakStatus = document.getElementById('lunch-break-status');
+    lunchBreakStatus.textContent = `Current status: ${status}`;
+    lunchBreakStatus.className = status === 'In' ? 'status-in' : 'status-out';
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
