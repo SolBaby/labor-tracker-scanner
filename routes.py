@@ -78,7 +78,6 @@ def init_routes(app):
         if not employee or not task:
             return jsonify({'status': 'error', 'message': 'Invalid employee ID or task barcode'}), 400
         
-        # Check for existing active check-in
         active_check_in = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
         if active_check_in:
             return jsonify({'status': 'error', 'message': 'Employee already checked in'}), 400
@@ -117,7 +116,6 @@ def init_routes(app):
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
             
-            # Send SMS notification if Twilio is configured
             if twilio_client and employee.phone_number:
                 try:
                     message = twilio_client.messages.create(
@@ -235,5 +233,19 @@ def init_routes(app):
                 'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
             })
         return jsonify(report_data)
+
+    @app.route('/api/reports/delete/<int:id>', methods=['DELETE'])
+    def delete_report(id):
+        time_log = TimeLog.query.get(id)
+        if time_log:
+            db.session.delete(time_log)
+            try:
+                db.session.commit()
+                emit_analytics_update(app.extensions['socketio'])
+                return jsonify({'status': 'success', 'message': 'Report deleted successfully'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': 'Report not found'}), 404
 
     return app

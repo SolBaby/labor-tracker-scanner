@@ -10,7 +10,10 @@ function updateReports() {
             cachedData = data;
             renderReports(data);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while fetching reports', 'error');
+        });
 }
 
 function renderReports(data) {
@@ -89,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     resetSortBtn.addEventListener('click', resetSorting);
 
-    // Add event delegation for edit and delete buttons
     document.querySelector('table tbody').addEventListener('click', function(e) {
         if (e.target.classList.contains('edit-btn')) {
             const id = e.target.dataset.id;
@@ -100,7 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial update
     updateReports();
 });
 
@@ -140,11 +141,15 @@ function saveEdit() {
             document.getElementById('edit-modal').style.display = 'none';
             cachedData = null;
             updateReports();
+            showNotification('Report updated successfully', 'success');
         } else {
-            alert(data.message);
+            showNotification(data.message, 'error');
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while updating the report', 'error');
+    });
 }
 
 function deleteReport(id) {
@@ -155,15 +160,30 @@ function deleteReport(id) {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                cachedData = null;
-                updateReports();
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.remove();
+                }
+                showNotification('Report deleted successfully', 'success');
             } else {
-                alert(data.message);
+                showNotification(data.message, 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the report', 'error');
+        });
     }
 }
 
-// Initial update
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
 updateReports();
