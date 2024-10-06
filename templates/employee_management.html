@@ -24,6 +24,7 @@
             <th class="sortable" data-sort="name">Name</th>
             <th class="sortable" data-sort="employee_id">Employee ID</th>
             <th class="sortable" data-sort="task_id">Task ID</th>
+            <th class="sortable" data-sort="phone_number">Phone Number</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -34,6 +35,7 @@
             <td class="employee-name">{{ employee.name }}</td>
             <td>{{ employee.employee_id }}</td>
             <td>{{ employee.task_id }}</td>
+            <td>{{ employee.phone_number }}</td>
             <td>
                 <button class="btn edit-btn" data-id="{{ employee.id }}">Edit</button>
                 <button class="btn delete-btn" data-id="{{ employee.id }}">Delete</button>
@@ -61,6 +63,8 @@
             <input type="text" id="employee-id-input" required>
             <label for="employee-task-id">Task ID:</label>
             <input type="text" id="employee-task-id" required>
+            <label for="employee-phone">Phone Number:</label>
+            <input type="tel" id="employee-phone" required>
             <button type="submit" class="btn">Save</button>
         </form>
     </div>
