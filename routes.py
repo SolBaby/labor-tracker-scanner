@@ -1,4 +1,4 @@
-from flask import jsonify, request, render_template
+from flask import jsonify, request, render_template, redirect, url_for
 from app import db
 from models import Employee, Task, TimeLog
 from sqlalchemy import func, or_
@@ -39,7 +39,7 @@ def init_routes(app):
     def employee_history(employee_id):
         employee = Employee.query.filter(
             (Employee.employee_id == employee_id) | 
-            (Employee.employee_id == 'E' + employee_id)
+            (Employee.employee_id == employee_id.lstrip('E'))
         ).first()
         if employee:
             time_logs = TimeLog.query.filter_by(employee_id=employee.id).order_by(TimeLog.start_time.desc()).all()
@@ -48,7 +48,10 @@ def init_routes(app):
 
     @app.route('/task_history/<string:task_id>')
     def task_history(task_id):
-        task = Task.query.filter_by(task_id=task_id).first()
+        task = Task.query.filter(
+            (Task.task_id == task_id) | 
+            (Task.task_id == task_id.lstrip('T'))
+        ).first()
         if task:
             time_logs = TimeLog.query.filter_by(task_id=task.id).order_by(TimeLog.start_time.desc()).all()
             return render_template('task_history.html', task=task, time_logs=time_logs)
@@ -137,6 +140,39 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/api/employee/bathroom_break', methods=['POST'])
+    def employee_bathroom_break():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        if time_log.bathroom_break_start and not time_log.bathroom_break_end:
+            time_log.bathroom_break_end = datetime.utcnow()
+            bathroom_break_status = 'Out'
+            message = 'Bathroom break ended'
+        else:
+            time_log.bathroom_break_start = datetime.utcnow()
+            time_log.bathroom_break_end = None
+            bathroom_break_status = 'In'
+            message = 'Bathroom break started'
+        
+        try:
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': message, 'bathroom_break_status': bathroom_break_status}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/employee/delete/<int:id>', methods=['DELETE'])
     def delete_employee(id):
         employee = Employee.query.get(id)
@@ -194,6 +230,8 @@ def init_routes(app):
             TimeLog.end_time.label('check_out_time'),
             TimeLog.lunch_break_start.label('lunch_break_start'),
             TimeLog.lunch_break_end.label('lunch_break_end'),
+            TimeLog.bathroom_break_start.label('bathroom_break_start'),
+            TimeLog.bathroom_break_end.label('bathroom_break_end'),
             func.sum(func.extract('epoch', TimeLog.duration) / 3600).label('total_hours'),
             func.sum(func.extract('epoch', TimeLog.duration) / 60 % 60).label('total_minutes')
         ).select_from(Employee).join(TimeLog).join(Task).group_by(TimeLog.id, Employee.id, Task.id)
@@ -216,7 +254,7 @@ def init_routes(app):
         elif sort_field == 'lunch_break_end':
             sort_expr = TimeLog.lunch_break_end
         else:
-            sort_expr = Employee.name  # Default sort
+            sort_expr = Employee.name
 
         query = query.order_by(sort_expr.desc() if sort_order == 'desc' else sort_expr)
 
@@ -232,6 +270,8 @@ def init_routes(app):
                 'check_out_time': record.check_out_time.isoformat() if record.check_out_time else None,
                 'lunch_break_start': record.lunch_break_start.isoformat() if record.lunch_break_start else None,
                 'lunch_break_end': record.lunch_break_end.isoformat() if record.lunch_break_end else None,
+                'bathroom_break_start': record.bathroom_break_start.isoformat() if record.bathroom_break_start else None,
+                'bathroom_break_end': record.bathroom_break_end.isoformat() if record.bathroom_break_end else None,
                 'total_hours': int(record.total_hours) if record.total_hours is not None else 0,
                 'total_minutes': int(record.total_minutes) if record.total_minutes is not None else 0
             }
