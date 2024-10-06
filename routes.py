@@ -78,6 +78,7 @@ def init_routes(app):
     def employee_lunch_break():
         data = request.json
         employee_id = data.get('employee_id')
+        action = data.get('action')
         
         employee = Employee.query.filter_by(employee_id=employee_id).first()
         
@@ -89,15 +90,21 @@ def init_routes(app):
         if not time_log:
             return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
         
-        if time_log.lunch_break_start and not time_log.lunch_break_end:
-            time_log.lunch_break_end = datetime.utcnow()
-            lunch_break_status = 'Out'
-            message = 'Lunch break ended'
-        else:
+        if action == 'IN':
+            if time_log.lunch_break_start and not time_log.lunch_break_end:
+                return jsonify({'status': 'error', 'message': 'Lunch break already started'}), 400
             time_log.lunch_break_start = datetime.utcnow()
             time_log.lunch_break_end = None
             lunch_break_status = 'In'
             message = 'Lunch break started'
+        elif action == 'OUT':
+            if not time_log.lunch_break_start or time_log.lunch_break_end:
+                return jsonify({'status': 'error', 'message': 'No active lunch break found'}), 400
+            time_log.lunch_break_end = datetime.utcnow()
+            lunch_break_status = 'Out'
+            message = 'Lunch break ended'
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid action'}), 400
         
         try:
             db.session.commit()
