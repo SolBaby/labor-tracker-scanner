@@ -33,6 +33,10 @@ def init_routes(app):
     def reports():
         return render_template('reports.html')
 
+    @app.route('/analytics_dashboard')
+    def analytics_dashboard():
+        return render_template('analytics.html')
+
     @app.route('/api/employee/bathroom_break', methods=['POST'])
     def handle_bathroom_break():
         data = request.json
