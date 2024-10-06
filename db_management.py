@@ -79,6 +79,29 @@ def get_database_schema():
     headers = ["Table", "Column", "Data Type", "Nullable"]
     print(tabulate(schema, headers=headers, tablefmt="grid"))
 
+def list_tables():
+    query = """
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+    ORDER BY table_name;
+    """
+    tables = execute_query(query)
+    print("Tables in the database:")
+    for table in tables:
+        print(table[0])
+
+def execute_custom_query(query):
+    try:
+        result = execute_query(query)
+        if result:
+            headers = [desc[0] for desc in result[0].cursor_description]
+            print(tabulate(result, headers=headers, tablefmt="grid"))
+        else:
+            print("Query executed successfully. No results returned.")
+    except Exception as e:
+        print(f"Error executing query: {str(e)}")
+
 def main():
     while True:
         print("\n--- Employee Management System ---")
@@ -89,9 +112,10 @@ def main():
         print("5. Show employee details")
         print("6. Execute custom SQL query")
         print("7. Show database schema")
-        print("8. Exit")
+        print("8. List all tables")
+        print("9. Exit")
         
-        choice = input("Enter your choice (1-8): ")
+        choice = input("Enter your choice (1-9): ")
         
         if choice == '1':
             list_employees()
@@ -126,16 +150,12 @@ def main():
                 print("Employee not found.")
         elif choice == '6':
             query = input("Enter your SQL query: ")
-            try:
-                result = execute_query(query)
-                if result:
-                    print(tabulate(result, headers="keys", tablefmt="grid"))
-                print("Query executed successfully.")
-            except Exception as e:
-                print(f"Error executing query: {str(e)}")
+            execute_custom_query(query)
         elif choice == '7':
             get_database_schema()
         elif choice == '8':
+            list_tables()
+        elif choice == '9':
             print("Exiting...")
             break
         else:
