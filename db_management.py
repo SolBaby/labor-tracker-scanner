@@ -37,7 +37,12 @@ def update_employee(id, name, employee_id, department):
     query = "UPDATE employee SET name = %s, employee_id = %s, department = %s WHERE id = %s;"
     execute_query(query, (name, employee_id, department, id))
 
+def delete_employee_time_logs(employee_id):
+    query = "DELETE FROM time_log WHERE employee_id = %s;"
+    execute_query(query, (employee_id,))
+
 def delete_employee(id):
+    delete_employee_time_logs(id)
     query = "DELETE FROM employee WHERE id = %s;"
     execute_query(query, (id,))
 
