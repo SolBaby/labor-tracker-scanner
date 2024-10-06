@@ -4,6 +4,21 @@ from models import Employee, Task, TimeLog
 from sqlalchemy import func, or_
 from datetime import timedelta, datetime
 from analytics import init_analytics, emit_analytics_update
+import os
+
+# Initialize Twilio client only if credentials are available
+twilio_client = None
+try:
+    from twilio.rest import Client
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    twilio_phone_number = os.environ.get('TWILIO_PHONE_NUMBER')
+    if account_sid and auth_token:
+        twilio_client = Client(account_sid, auth_token)
+except ImportError:
+    print("Twilio library not installed. SMS notifications will not be available.")
+except Exception as e:
+    print(f"Error initializing Twilio client: {str(e)}")
 
 def init_routes(app):
     @app.route('/')
@@ -102,7 +117,21 @@ def init_routes(app):
         try:
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
-            return jsonify({'status': 'success', 'message': 'Check-out successful'}), 200
+            
+            # Send SMS notification if Twilio is configured
+            if twilio_client and employee.phone_number:
+                try:
+                    message = twilio_client.messages.create(
+                        body=f"Employee {employee.name} (ID: {employee.employee_id}) has checked out at {time_log.end_time.strftime('%Y-%m-%d %H:%M:%S')}",
+                        from_=twilio_phone_number,
+                        to=employee.phone_number
+                    )
+                    return jsonify({'status': 'success', 'message': 'Check-out successful and SMS notification sent'}), 200
+                except Exception as e:
+                    print(f"Error sending SMS: {str(e)}")
+                    return jsonify({'status': 'success', 'message': 'Check-out successful, but SMS notification failed'}), 200
+            else:
+                return jsonify({'status': 'success', 'message': 'Check-out successful (SMS notification not configured)'}), 200
         except Exception as e:
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500

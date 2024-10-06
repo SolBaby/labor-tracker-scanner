@@ -6,6 +6,7 @@ class Employee(db.Model):
     name = db.Column(db.String(100), nullable=False)
     employee_id = db.Column(db.String(20), unique=True, nullable=False)
     department = db.Column(db.String(50), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=True)  # Added phone_number field
     time_logs = db.relationship('TimeLog', backref='employee', lazy=True)
 
 class Task(db.Model):
