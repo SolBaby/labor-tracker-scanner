@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from psycopg2 import sql
+from tabulate import tabulate
 
 def get_db_connection():
     return psycopg2.connect(
@@ -27,24 +28,45 @@ def execute_query(query, params=None):
 
 def list_employees():
     query = "SELECT * FROM employee;"
-    return execute_query(query)
+    employees = execute_query(query)
+    headers = ["ID", "Name", "Employee ID", "Department"]
+    print(tabulate(employees, headers=headers, tablefmt="grid"))
 
 def add_employee(name, employee_id, department):
     query = "INSERT INTO employee (name, employee_id, department) VALUES (%s, %s, %s);"
-    execute_query(query, (name, employee_id, department))
+    try:
+        execute_query(query, (name, employee_id, department))
+        print("Employee added successfully.")
+    except psycopg2.Error as e:
+        print(f"Error adding employee: {e}")
 
-def update_employee(id, name, employee_id, department):
-    query = "UPDATE employee SET name = %s, employee_id = %s, department = %s WHERE id = %s;"
-    execute_query(query, (name, employee_id, department, id))
+def get_employee(id):
+    query = "SELECT * FROM employee WHERE id = %s;"
+    result = execute_query(query, (id,))
+    if result:
+        return result[0]
+    return None
 
-def delete_employee_time_logs(employee_id):
-    query = "DELETE FROM time_log WHERE employee_id = %s;"
-    execute_query(query, (employee_id,))
+def update_employee(id, field, value):
+    valid_fields = ['name', 'employee_id', 'department']
+    if field not in valid_fields:
+        print(f"Invalid field. Choose from: {', '.join(valid_fields)}")
+        return
+    
+    query = sql.SQL("UPDATE employee SET {} = %s WHERE id = %s;").format(sql.Identifier(field))
+    try:
+        execute_query(query, (value, id))
+        print("Employee updated successfully.")
+    except psycopg2.Error as e:
+        print(f"Error updating employee: {e}")
 
 def delete_employee(id):
-    delete_employee_time_logs(id)
     query = "DELETE FROM employee WHERE id = %s;"
-    execute_query(query, (id,))
+    try:
+        execute_query(query, (id,))
+        print("Employee deleted successfully.")
+    except psycopg2.Error as e:
+        print(f"Error deleting employee: {e}")
 
 def get_database_schema():
     query = """
@@ -53,56 +75,67 @@ def get_database_schema():
     WHERE table_schema = 'public'
     ORDER BY table_name, ordinal_position;
     """
-    return execute_query(query)
+    schema = execute_query(query)
+    headers = ["Table", "Column", "Data Type", "Nullable"]
+    print(tabulate(schema, headers=headers, tablefmt="grid"))
 
 def main():
     while True:
-        print("\n1. List all employees")
+        print("\n--- Employee Management System ---")
+        print("1. List all employees")
         print("2. Add new employee")
         print("3. Update employee")
         print("4. Delete employee")
-        print("5. Execute custom SQL query")
-        print("6. Show database schema")
-        print("7. Exit")
+        print("5. Show employee details")
+        print("6. Execute custom SQL query")
+        print("7. Show database schema")
+        print("8. Exit")
         
-        choice = input("Enter your choice (1-7): ")
+        choice = input("Enter your choice (1-8): ")
         
         if choice == '1':
-            employees = list_employees()
-            for emp in employees:
-                print(emp)
+            list_employees()
         elif choice == '2':
             name = input("Enter employee name: ")
             employee_id = input("Enter employee ID: ")
             department = input("Enter department: ")
             add_employee(name, employee_id, department)
-            print("Employee added successfully.")
         elif choice == '3':
             id = input("Enter employee ID to update: ")
-            name = input("Enter new name: ")
-            employee_id = input("Enter new employee ID: ")
-            department = input("Enter new department: ")
-            update_employee(id, name, employee_id, department)
-            print("Employee updated successfully.")
+            employee = get_employee(id)
+            if employee:
+                print("Current employee details:")
+                print(f"Name: {employee[1]}")
+                print(f"Employee ID: {employee[2]}")
+                print(f"Department: {employee[3]}")
+                field = input("Enter field to update (name/employee_id/department): ")
+                value = input(f"Enter new {field}: ")
+                update_employee(id, field, value)
+            else:
+                print("Employee not found.")
         elif choice == '4':
             id = input("Enter employee ID to delete: ")
             delete_employee(id)
-            print("Employee deleted successfully.")
         elif choice == '5':
+            id = input("Enter employee ID to view details: ")
+            employee = get_employee(id)
+            if employee:
+                headers = ["ID", "Name", "Employee ID", "Department"]
+                print(tabulate([employee], headers=headers, tablefmt="grid"))
+            else:
+                print("Employee not found.")
+        elif choice == '6':
             query = input("Enter your SQL query: ")
             try:
                 result = execute_query(query)
                 if result:
-                    for row in result:
-                        print(row)
+                    print(tabulate(result, headers="keys", tablefmt="grid"))
                 print("Query executed successfully.")
             except Exception as e:
                 print(f"Error executing query: {str(e)}")
-        elif choice == '6':
-            schema = get_database_schema()
-            for table_info in schema:
-                print(f"Table: {table_info[0]}, Column: {table_info[1]}, Type: {table_info[2]}, Nullable: {table_info[3]}")
         elif choice == '7':
+            get_database_schema()
+        elif choice == '8':
             print("Exiting...")
             break
         else:
