@@ -78,6 +78,11 @@ def init_routes(app):
         if not employee or not task:
             return jsonify({'status': 'error', 'message': 'Invalid employee ID or task barcode'}), 400
         
+        # Check for existing active check-in
+        active_check_in = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').first()
+        if active_check_in:
+            return jsonify({'status': 'error', 'message': 'Employee already checked in'}), 400
+        
         time_log = TimeLog(employee_id=employee.id, task_id=task.id, status='checked_in')
         db.session.add(time_log)
         
