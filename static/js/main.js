@@ -193,7 +193,7 @@ function handleBathroomBreak(employeeId) {
         if (data.status === 'success') {
             showNotification(data.message, 'success');
             document.getElementById('bathroom-break-employee-id').value = '';
-            updateBathroomBreakStatus(data.bathroom_break_status, data.total_bathroom_break_duration);
+            updateBathroomBreakStatus(data.bathroom_break_status);
         } else {
             showNotification(data.message, 'error');
         }
@@ -204,9 +204,9 @@ function handleBathroomBreak(employeeId) {
     });
 }
 
-function updateBathroomBreakStatus(status, totalDuration) {
+function updateBathroomBreakStatus(status) {
     const bathroomBreakStatus = document.getElementById('bathroom-break-status');
-    bathroomBreakStatus.textContent = `Current status: ${status} | Total duration: ${totalDuration}`;
+    bathroomBreakStatus.textContent = `Current status: ${status}`;
     bathroomBreakStatus.className = status === 'In' ? 'status-in' : 'status-out';
 }
 

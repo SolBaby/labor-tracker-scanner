@@ -30,7 +30,7 @@ function renderReports(data) {
             <td>${record.check_out_time ? new Date(record.check_out_time).toLocaleString() : 'N/A'}</td>
             <td>${record.lunch_break_start ? new Date(record.lunch_break_start).toLocaleString() : 'N/A'}</td>
             <td>${record.lunch_break_end ? new Date(record.lunch_break_end).toLocaleString() : 'N/A'}</td>
-            <td>${record.total_bathroom_break_duration}</td>
+            <td>${record.bathroom_break_duration !== null ? record.bathroom_break_duration.toFixed(2) + ' minutes' : 'N/A'}</td>
             <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
             <td>
                 <button class="btn edit-btn" data-id="${record.id}">Edit</button>
