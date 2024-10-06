@@ -37,6 +37,33 @@ def init_routes(app):
     def analytics_dashboard():
         return render_template('analytics.html')
 
+    @app.route('/api/employee/check_in', methods=['POST'])
+    def employee_check_in():
+        data = request.json
+        employee_id = data.get('employee_id')
+        task_barcode = data.get('task_barcode')
+
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        task = Task.query.filter_by(barcode=task_barcode).first()
+
+        if not employee or not task:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID or task barcode'}), 400
+
+        existing_active_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None).first()
+        if existing_active_log:
+            return jsonify({'status': 'error', 'message': 'Employee already checked in'}), 400
+
+        new_time_log = TimeLog(employee_id=employee.id, task_id=task.id, start_time=datetime.utcnow(), status='checked_in')
+        db.session.add(new_time_log)
+
+        try:
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': 'Check-in successful'}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     @app.route('/api/employee/bathroom_break', methods=['POST'])
     def handle_bathroom_break():
         data = request.json
@@ -99,7 +126,5 @@ def init_routes(app):
                 'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
             })
         return jsonify(report_data)
-
-    # Keep the remaining route definitions...
 
     return app
