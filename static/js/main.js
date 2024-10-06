@@ -29,14 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const scannedValue = this.value.trim();
-                if (scannedValue.startsWith('E')) {
-                    employeeIdInput.value = scannedValue;
-                    taskBarcodeInput.focus();
-                } else {
-                    taskBarcodeInput.value = scannedValue;
-                    employeeIdInput.focus();
-                }
-                this.value = '';
+                sendScanToServer(scannedValue);
             }
         });
     }
