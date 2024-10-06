@@ -102,18 +102,6 @@ def execute_custom_query(query):
     except Exception as e:
         print(f"Error executing query: {str(e)}")
 
-def column_exists(table_name, column_name):
-    query = f"""
-    SELECT EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_name = '{table_name}'
-        AND column_name = '{column_name}'
-    );
-    """
-    result = execute_query(query)
-    return result[0][0]
-
 def main():
     while True:
         print("\n--- Employee Management System ---")
@@ -125,10 +113,9 @@ def main():
         print("6. Execute custom SQL query")
         print("7. Show database schema")
         print("8. List all tables")
-        print("9. Check if column exists")
-        print("10. Exit")
+        print("9. Exit")
         
-        choice = input("Enter your choice (1-10): ")
+        choice = input("Enter your choice (1-9): ")
         
         if choice == '1':
             list_employees()
@@ -169,11 +156,6 @@ def main():
         elif choice == '8':
             list_tables()
         elif choice == '9':
-            table_name = input("Enter table name: ")
-            column_name = input("Enter column name: ")
-            exists = column_exists(table_name, column_name)
-            print(f"Column '{column_name}' {'exists' if exists else 'does not exist'} in table '{table_name}'")
-        elif choice == '10':
             print("Exiting...")
             break
         else:

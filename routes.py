@@ -33,75 +33,34 @@ def init_routes(app):
     def reports():
         return render_template('reports.html')
 
-    @app.route('/analytics_dashboard')
-    def analytics_dashboard():
-        return render_template('analytics.html')
-
-    @app.route('/api/employee/check_in', methods=['POST'])
-    def employee_check_in():
-        try:
-            data = request.json
-            employee_id = data.get('employee_id')
-            task_barcode = data.get('task_barcode')
-
-            if not employee_id or not task_barcode:
-                raise ValueError("Missing employee_id or task_barcode")
-
-            employee = Employee.query.filter_by(employee_id=employee_id).first()
-            task = Task.query.filter_by(barcode=task_barcode).first()
-
-            if not employee or not task:
-                raise ValueError("Invalid employee ID or task barcode")
-
-            existing_active_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None).first()
-            if existing_active_log:
-                raise ValueError("Employee already checked in")
-
-            new_time_log = TimeLog(employee_id=employee.id, task_id=task.id, start_time=datetime.utcnow(), status='checked_in')
-            db.session.add(new_time_log)
-            db.session.commit()
-
-            emit_analytics_update(app.extensions['socketio'])
-            return jsonify({'status': 'success', 'message': 'Check-in successful'}), 200
-        except ValueError as ve:
-            app.logger.error(f"Validation error during employee check-in: {str(ve)}")
-            return jsonify({'status': 'error', 'message': str(ve)}), 400
-        except Exception as e:
-            app.logger.error(f"Error during employee check-in: {str(e)}")
-            db.session.rollback()
-            return jsonify({'status': 'error', 'message': 'An error occurred during check-in. Please try again.'}), 500
-
     @app.route('/api/employee/bathroom_break', methods=['POST'])
     def handle_bathroom_break():
+        data = request.json
+        employee_id = data.get('employee_id')
+        
+        employee = Employee.query.filter_by(employee_id=employee_id).first()
+        
+        if not employee:
+            return jsonify({'status': 'error', 'message': 'Invalid employee ID'}), 400
+        
+        time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
+        
+        if not time_log:
+            return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
+        
+        current_time = datetime.utcnow()
+        if time_log.bathroom_break_start and not time_log.bathroom_break_end:
+            time_log.bathroom_break_end = current_time
+            bathroom_break_duration = time_log.bathroom_break_end - time_log.bathroom_break_start
+            time_log.add_bathroom_break_duration(bathroom_break_duration)
+            bathroom_break_status = 'Out'
+        else:
+            time_log.bathroom_break_start = current_time
+            time_log.bathroom_break_end = None
+            bathroom_break_duration = None
+            bathroom_break_status = 'In'
+        
         try:
-            data = request.json
-            employee_id = data.get('employee_id')
-            
-            if not employee_id:
-                raise ValueError("Missing employee_id")
-
-            employee = Employee.query.filter_by(employee_id=employee_id).first()
-            
-            if not employee:
-                raise ValueError("Invalid employee ID")
-            
-            time_log = TimeLog.query.filter_by(employee_id=employee.id, end_time=None, status='checked_in').order_by(TimeLog.start_time.desc()).first()
-            
-            if not time_log:
-                raise ValueError("No active check-in found")
-            
-            current_time = datetime.utcnow()
-            if time_log.bathroom_break_start and not time_log.bathroom_break_end:
-                time_log.bathroom_break_end = current_time
-                bathroom_break_duration = time_log.bathroom_break_end - time_log.bathroom_break_start
-                time_log.add_bathroom_break_duration(bathroom_break_duration)
-                bathroom_break_status = 'Out'
-            else:
-                time_log.bathroom_break_start = current_time
-                time_log.bathroom_break_end = None
-                bathroom_break_duration = None
-                bathroom_break_status = 'In'
-            
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
             return jsonify({
@@ -111,38 +70,32 @@ def init_routes(app):
                 'bathroom_break_duration': str(bathroom_break_duration) if bathroom_break_duration else None,
                 'total_bathroom_break_duration': str(time_log.total_bathroom_break_duration)
             }), 200
-        except ValueError as ve:
-            app.logger.error(f"Validation error during bathroom break: {str(ve)}")
-            return jsonify({'status': 'error', 'message': str(ve)}), 400
         except Exception as e:
-            app.logger.error(f"Error during bathroom break: {str(e)}")
             db.session.rollback()
-            return jsonify({'status': 'error', 'message': 'An error occurred during bathroom break. Please try again.'}), 500
+            return jsonify({'status': 'error', 'message': str(e)}), 500
 
     @app.route('/api/reports/data')
     def get_report_data():
-        try:
-            time_logs = TimeLog.query.order_by(TimeLog.start_time.desc()).all()
-            report_data = []
-            for log in time_logs:
-                report_data.append({
-                    'id': log.id,
-                    'employee_name': log.employee.name,
-                    'task_name': log.task.name,
-                    'task_location': log.task.location,
-                    'check_in_time': log.start_time.isoformat() if log.start_time else None,
-                    'check_out_time': log.end_time.isoformat() if log.end_time else None,
-                    'lunch_break_start': log.lunch_break_start.isoformat() if log.lunch_break_start else None,
-                    'lunch_break_end': log.lunch_break_end.isoformat() if log.lunch_break_end else None,
-                    'bathroom_break_start': log.bathroom_break_start.isoformat() if log.bathroom_break_start else None,
-                    'bathroom_break_end': log.bathroom_break_end.isoformat() if log.bathroom_break_end else None,
-                    'total_bathroom_break_duration': str(log.total_bathroom_break_duration) if log.total_bathroom_break_duration else '0:00:00',
-                    'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
-                    'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
-                })
-            return jsonify(report_data)
-        except Exception as e:
-            app.logger.error(f"Error fetching report data: {str(e)}")
-            return jsonify({'status': 'error', 'message': 'An error occurred while fetching reports. Please try again.'}), 500
+        time_logs = TimeLog.query.order_by(TimeLog.start_time.desc()).all()
+        report_data = []
+        for log in time_logs:
+            report_data.append({
+                'id': log.id,
+                'employee_name': log.employee.name,
+                'task_name': log.task.name,
+                'task_location': log.task.location,
+                'check_in_time': log.start_time.isoformat() if log.start_time else None,
+                'check_out_time': log.end_time.isoformat() if log.end_time else None,
+                'lunch_break_start': log.lunch_break_start.isoformat() if log.lunch_break_start else None,
+                'lunch_break_end': log.lunch_break_end.isoformat() if log.lunch_break_end else None,
+                'bathroom_break_start': log.bathroom_break_start.isoformat() if log.bathroom_break_start else None,
+                'bathroom_break_end': log.bathroom_break_end.isoformat() if log.bathroom_break_end else None,
+                'total_bathroom_break_duration': str(log.total_bathroom_break_duration) if log.total_bathroom_break_duration else '0:00:00',
+                'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
+                'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
+            })
+        return jsonify(report_data)
+
+    # Keep the remaining route definitions...
 
     return app
