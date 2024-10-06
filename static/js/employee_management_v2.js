@@ -169,14 +169,29 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                searchEmployees();
+                // Remove the employee row from the table
+                document.querySelector(`tr[data-id="${id}"]`).remove();
+                showNotification('Employee deleted successfully', 'success');
             } else {
-                alert(data.message);
+                showNotification(data.message, 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the employee', 'error');
+        });
     }
 
     // Initialize employee list
     searchEmployees();
 });
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}

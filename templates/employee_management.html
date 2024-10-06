@@ -29,7 +29,7 @@
     </thead>
     <tbody>
         {% for employee in employees %}
-        <tr>
+        <tr data-id="{{ employee.id }}">
             <td>{{ employee.id }}</td>
             <td class="employee-name">{{ employee.name }}</td>
             <td>{{ employee.employee_id }}</td>

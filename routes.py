@@ -107,6 +107,15 @@ def init_routes(app):
             db.session.rollback()
             return jsonify({'status': 'error', 'message': str(e)}), 500
 
+    @app.route('/api/employee/delete/<int:id>', methods=['DELETE'])
+    def delete_employee(id):
+        employee = Employee.query.get(id)
+        if employee:
+            db.session.delete(employee)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Employee deleted successfully'})
+        return jsonify({'status': 'error', 'message': 'Employee not found'}), 404
+
     @app.route('/api/reports/edit', methods=['POST'])
     def edit_report():
         data = request.json
