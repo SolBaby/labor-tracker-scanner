@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskBarcodeInput = document.getElementById('task-barcode');
     const lunchBreakForm = document.getElementById('lunch-break-form');
     const lunchBreakStatus = document.getElementById('lunch-break-status');
-    const lunchBreakEmployeeId = document.getElementById('lunch-break-employee-id');
-    const lunchBreakAction = document.getElementById('lunch-break-action');
 
     // Focus on Employee ID input when the page loads
     if (employeeIdInput) {
@@ -63,13 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (lunchBreakForm) {
         lunchBreakForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const employeeId = lunchBreakEmployeeId.value;
-            const action = lunchBreakAction.value.toUpperCase();
-            if (action === 'IN' || action === 'OUT') {
-                handleLunchBreak(employeeId, action);
-            } else {
-                showNotification('Invalid lunch break action. Please scan "IN" or "OUT".', 'error');
-            }
+            const employeeId = document.getElementById('lunch-break-employee-id').value;
+            handleLunchBreak(employeeId);
         });
     }
 });
@@ -141,20 +134,19 @@ function checkOut(employeeId) {
     });
 }
 
-function handleLunchBreak(employeeId, action) {
+function handleLunchBreak(employeeId) {
     fetch('/api/employee/lunch_break', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ employee_id: employeeId, action: action }),
+        body: JSON.stringify({ employee_id: employeeId }),
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             showNotification(data.message, 'success');
             document.getElementById('lunch-break-employee-id').value = '';
-            document.getElementById('lunch-break-action').value = '';
             updateLunchBreakStatus(data.lunch_break_status);
         } else {
             showNotification(data.message, 'error');
