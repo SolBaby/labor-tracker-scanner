@@ -1,6 +1,6 @@
 from flask import jsonify, request, render_template, redirect, url_for
 from app import db
-from models import Employee, Task, TimeLog
+from models import Employee, Task, TimeLog, BathroomBreak
 from sqlalchemy import func, or_
 from datetime import timedelta, datetime
 from analytics import init_analytics, emit_analytics_update
@@ -161,15 +161,18 @@ def init_routes(app):
         if not time_log:
             return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
         
-        if time_log.bathroom_break_start and not time_log.bathroom_break_end:
-            time_log.bathroom_break_end = datetime.utcnow()
-            bathroom_break_duration = time_log.bathroom_break_end - time_log.bathroom_break_start
+        active_bathroom_break = BathroomBreak.query.filter_by(time_log_id=time_log.id, end_time=None).first()
+        
+        if active_bathroom_break:
+            active_bathroom_break.end_time = datetime.utcnow()
+            active_bathroom_break.update_duration()
             bathroom_break_status = 'Out'
+            bathroom_break_duration = active_bathroom_break.duration
         else:
-            time_log.bathroom_break_start = datetime.utcnow()
-            time_log.bathroom_break_end = None
-            bathroom_break_duration = None
+            new_bathroom_break = BathroomBreak(time_log_id=time_log.id)
+            db.session.add(new_bathroom_break)
             bathroom_break_status = 'In'
+            bathroom_break_duration = None
         
         try:
             db.session.commit()
@@ -311,9 +314,8 @@ def init_routes(app):
         time_logs = TimeLog.query.order_by(TimeLog.start_time.desc()).all()
         report_data = []
         for log in time_logs:
-            bathroom_break_duration = None
-            if log.bathroom_break_start and log.bathroom_break_end:
-                bathroom_break_duration = (log.bathroom_break_end - log.bathroom_break_start).total_seconds() / 60
+            bathroom_breaks = BathroomBreak.query.filter_by(time_log_id=log.id).all()
+            bathroom_break_duration = sum((break_.duration.total_seconds() if break_.duration else 0) for break_ in bathroom_breaks) / 60
             
             report_data.append({
                 'id': log.id,
@@ -324,9 +326,7 @@ def init_routes(app):
                 'check_out_time': log.end_time.isoformat() if log.end_time else None,
                 'lunch_break_start': log.lunch_break_start.isoformat() if log.lunch_break_start else None,
                 'lunch_break_end': log.lunch_break_end.isoformat() if log.lunch_break_end else None,
-                'bathroom_break_start': log.bathroom_break_start.isoformat() if log.bathroom_break_start else None,
-                'bathroom_break_end': log.bathroom_break_end.isoformat() if log.bathroom_break_end else None,
-                'bathroom_break_duration': round(bathroom_break_duration, 2) if bathroom_break_duration is not None else None,
+                'bathroom_break_duration': round(bathroom_break_duration, 2) if bathroom_break_duration else None,
                 'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
                 'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
             })

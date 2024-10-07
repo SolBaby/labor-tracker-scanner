@@ -27,6 +27,14 @@ args = "Create Migration"
 task = "workflow.run"
 args = "Apply Migration"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Merge Migration Heads"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Apply Migrations"
+
 [[workflows.workflow]]
 name = "Start Flask App"
 author = "agent"
@@ -59,10 +67,32 @@ agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "flask db migrate -m 'Remove bathroom break columns from TimeLog and create BathroomBreak model'"
+args = "flask db migrate -m 'Add BathroomBreak model and update TimeLog'"
 
 [[workflows.workflow]]
 name = "Apply Migration"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "flask db upgrade"
+
+[[workflows.workflow]]
+name = "Merge Migration Heads"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "flask db merge heads"
+
+[[workflows.workflow]]
+name = "Apply Migrations"
 author = "agent"
 
 [workflows.workflow.metadata]
