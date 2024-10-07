@@ -29,6 +29,7 @@ class TimeLog(db.Model):
     lunch_break_end = db.Column(db.DateTime)
     bathroom_break_start = db.Column(db.DateTime)
     bathroom_break_end = db.Column(db.DateTime)
+    cumulative_bathroom_break_duration = db.Column(db.Interval, default=timedelta())
 
     def update_duration(self, new_duration):
         if isinstance(new_duration, timedelta):
@@ -37,3 +38,9 @@ class TimeLog(db.Model):
                 self.end_time = self.start_time + new_duration
         else:
             raise ValueError("new_duration must be a timedelta object")
+
+    def add_bathroom_break_duration(self, duration):
+        if self.cumulative_bathroom_break_duration is None:
+            self.cumulative_bathroom_break_duration = duration
+        else:
+            self.cumulative_bathroom_break_duration += duration

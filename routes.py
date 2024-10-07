@@ -161,12 +161,15 @@ def init_routes(app):
         if not time_log:
             return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
         
+        current_time = datetime.utcnow()
+        
         if time_log.bathroom_break_start and not time_log.bathroom_break_end:
-            time_log.bathroom_break_end = datetime.utcnow()
+            time_log.bathroom_break_end = current_time
             bathroom_break_duration = time_log.bathroom_break_end - time_log.bathroom_break_start
+            time_log.add_bathroom_break_duration(bathroom_break_duration)
             bathroom_break_status = 'Out'
         else:
-            time_log.bathroom_break_start = datetime.utcnow()
+            time_log.bathroom_break_start = current_time
             time_log.bathroom_break_end = None
             bathroom_break_duration = None
             bathroom_break_status = 'In'
@@ -178,7 +181,8 @@ def init_routes(app):
                 'status': 'success',
                 'message': f'Bathroom break {bathroom_break_status}',
                 'bathroom_break_status': bathroom_break_status,
-                'bathroom_break_duration': str(bathroom_break_duration) if bathroom_break_duration else None
+                'bathroom_break_duration': str(bathroom_break_duration) if bathroom_break_duration else None,
+                'cumulative_bathroom_break_duration': str(time_log.cumulative_bathroom_break_duration)
             }), 200
         except Exception as e:
             db.session.rollback()
@@ -327,6 +331,7 @@ def init_routes(app):
                 'bathroom_break_start': log.bathroom_break_start.isoformat() if log.bathroom_break_start else None,
                 'bathroom_break_end': log.bathroom_break_end.isoformat() if log.bathroom_break_end else None,
                 'bathroom_break_duration': round(bathroom_break_duration, 2) if bathroom_break_duration is not None else None,
+                'cumulative_bathroom_break_duration': log.cumulative_bathroom_break_duration.total_seconds() / 60 if log.cumulative_bathroom_break_duration else 0,
                 'total_hours': log.duration.total_seconds() // 3600 if log.duration else 0,
                 'total_minutes': (log.duration.total_seconds() % 3600) // 60 if log.duration else 0
             })
