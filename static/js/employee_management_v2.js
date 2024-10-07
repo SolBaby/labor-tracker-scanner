@@ -185,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize employee list
     searchEmployees();
 });
 

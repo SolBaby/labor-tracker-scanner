@@ -268,7 +268,7 @@ def init_routes(app):
             data = request.json
             employee.name = data['name']
             employee.employee_id = data['employee_id']
-            employee.department = data['department']
+            employee.task_id = data['task_id']
             employee.phone_number = data['phone_number']
             try:
                 db.session.commit()
