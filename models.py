@@ -27,8 +27,7 @@ class TimeLog(db.Model):
     status = db.Column(db.String(20), nullable=False, default='checked_in')
     lunch_break_start = db.Column(db.DateTime)
     lunch_break_end = db.Column(db.DateTime)
-    bathroom_break_start = db.Column(db.DateTime)
-    bathroom_break_end = db.Column(db.DateTime)
+    bathroom_breaks = db.relationship('BathroomBreak', backref='time_log', lazy=True, cascade='all, delete-orphan')
 
     def update_duration(self, new_duration):
         if isinstance(new_duration, timedelta):
@@ -37,3 +36,14 @@ class TimeLog(db.Model):
                 self.end_time = self.start_time + new_duration
         else:
             raise ValueError("new_duration must be a timedelta object")
+
+class BathroomBreak(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    time_log_id = db.Column(db.Integer, db.ForeignKey('time_log.id'), nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    end_time = db.Column(db.DateTime)
+    duration = db.Column(db.Interval)
+
+    def update_duration(self):
+        if self.start_time and self.end_time:
+            self.duration = self.end_time - self.start_time
