@@ -331,4 +331,21 @@ def init_routes(app):
                 return jsonify({'status': 'error', 'message': str(e)}), 500
         return jsonify({'status': 'error', 'message': 'Report not found'}), 404
 
+    @app.route('/api/reports/delete_multiple', methods=['POST'])
+    def delete_multiple_reports():
+        data = request.json
+        ids = data.get('ids', [])
+        
+        if not ids:
+            return jsonify({'status': 'error', 'message': 'No report IDs provided'}), 400
+        
+        try:
+            TimeLog.query.filter(TimeLog.id.in_(ids)).delete(synchronize_session=False)
+            db.session.commit()
+            emit_analytics_update(app.extensions['socketio'])
+            return jsonify({'status': 'success', 'message': f'{len(ids)} reports deleted successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
     return app

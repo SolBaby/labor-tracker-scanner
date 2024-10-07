@@ -23,6 +23,7 @@ function renderReports(data) {
         const row = document.createElement('tr');
         row.dataset.id = record.id;
         row.innerHTML = `
+            <td><input type="checkbox" class="report-checkbox" data-id="${record.id}"></td>
             <td>${record.employee_name}</td>
             <td>${record.task_name}</td>
             <td>${record.task_location}</td>
@@ -62,11 +63,46 @@ function resetSorting() {
     updateReports();
 }
 
+function deleteSelectedReports() {
+    const selectedIds = Array.from(document.querySelectorAll('.report-checkbox:checked'))
+        .map(checkbox => checkbox.dataset.id);
+    
+    if (selectedIds.length === 0) {
+        showNotification('No reports selected for deletion', 'error');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete ${selectedIds.length} selected reports?`)) {
+        fetch('/api/reports/delete_multiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids: selectedIds }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification(`${selectedIds.length} reports deleted successfully`, 'success');
+                updateReports();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting reports', 'error');
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('edit-modal');
     const closeBtn = editModal.querySelector('.close');
     const editForm = document.getElementById('edit-form');
     const resetSortBtn = document.getElementById('reset-sort-btn');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
 
     document.querySelector('table thead').addEventListener('click', function(e) {
         const sortBtn = e.target.closest('.sort-btn');
@@ -93,6 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     resetSortBtn.addEventListener('click', resetSorting);
 
+    deleteSelectedBtn.addEventListener('click', deleteSelectedReports);
+
+    selectAllCheckbox.addEventListener('change', function() {
+        document.querySelectorAll('.report-checkbox').forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
     document.querySelector('table tbody').addEventListener('click', function(e) {
         if (e.target.classList.contains('edit-btn')) {
             const id = e.target.dataset.id;
@@ -110,11 +154,11 @@ function editReport(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);
     const editModal = document.getElementById('edit-modal');
     document.getElementById('edit-id').value = id;
-    document.getElementById('edit-employee-name').value = row.cells[0].textContent;
-    document.getElementById('edit-task-name').value = row.cells[1].textContent;
-    document.getElementById('edit-task-location').value = row.cells[2].textContent;
+    document.getElementById('edit-employee-name').value = row.cells[1].textContent;
+    document.getElementById('edit-task-name').value = row.cells[2].textContent;
+    document.getElementById('edit-task-location').value = row.cells[3].textContent;
     
-    const timeParts = row.cells[8].textContent.split(',');
+    const timeParts = row.cells[9].textContent.split(',');
     const hours = parseInt(timeParts[0]);
     const minutes = parseInt(timeParts[1]);
     

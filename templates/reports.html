@@ -6,10 +6,12 @@
 <h2>Employee Hours by Task</h2>
 <div class="controls">
     <button id="reset-sort-btn" class="btn">Reset Sorting</button>
+    <button id="delete-selected-btn" class="btn">Delete Selected</button>
 </div>
 <table>
     <thead>
         <tr>
+            <th><input type="checkbox" id="select-all-checkbox"></th>
             <th><button class="sort-btn" data-sort="employee_name">Employee Name <span class="sort-arrow">▲</span></button></th>
             <th><button class="sort-btn" data-sort="task_name">Task Name <span class="sort-arrow">▲</span></button></th>
             <th><button class="sort-btn" data-sort="task_location">Task Location <span class="sort-arrow">▲</span></button></th>
