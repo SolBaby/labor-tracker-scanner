@@ -8,7 +8,6 @@ import os
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
-# Initialize Twilio client
 account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
 auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
 twilio_phone_number = os.environ.get('TWILIO_PHONE_NUMBER')
@@ -116,6 +115,7 @@ def init_routes(app):
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
             
+            sms_status = 'not_sent'
             if twilio_client and employee.phone_number:
                 try:
                     message = twilio_client.messages.create(
@@ -123,15 +123,23 @@ def init_routes(app):
                         from_=twilio_phone_number,
                         to=employee.phone_number
                     )
-                    return jsonify({'status': 'success', 'message': 'Check-out successful and SMS notification sent'}), 200
+                    sms_status = 'sent'
                 except TwilioRestException as e:
                     print(f"Error sending SMS: {str(e)}")
-                    return jsonify({'status': 'success', 'message': 'Check-out successful, but SMS notification failed'}), 200
-            else:
-                return jsonify({'status': 'success', 'message': 'Check-out successful (SMS notification not configured)'}), 200
+                    sms_status = 'failed'
+            
+            response_message = 'Check-out successful'
+            if sms_status == 'sent':
+                response_message += ' and SMS notification sent'
+            elif sms_status == 'failed':
+                response_message += ', but SMS notification failed'
+            elif sms_status == 'not_sent':
+                response_message += ' (SMS notification not configured)'
+            
+            return jsonify({'status': 'success', 'message': response_message}), 200
         except Exception as e:
             db.session.rollback()
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+            return jsonify({'status': 'error', 'message': f'Check-out failed: {str(e)}'}), 500
 
     @app.route('/api/employee/bathroom_break', methods=['POST'])
     def handle_bathroom_break():
@@ -186,24 +194,26 @@ def init_routes(app):
         if not time_log:
             return jsonify({'status': 'error', 'message': 'No active check-in found'}), 400
         
+        current_time = datetime.utcnow()
+        
         if time_log.lunch_break_start and not time_log.lunch_break_end:
-            time_log.lunch_break_end = datetime.utcnow()
+            time_log.lunch_break_end = current_time
             lunch_break_duration = time_log.lunch_break_end - time_log.lunch_break_start
-            lunch_break_status = 'Out'
+            lunch_break_status = 'ended'
+            message = f'Lunch break ended. Duration: {lunch_break_duration}'
         else:
-            time_log.lunch_break_start = datetime.utcnow()
+            time_log.lunch_break_start = current_time
             time_log.lunch_break_end = None
-            lunch_break_duration = None
-            lunch_break_status = 'In'
+            lunch_break_status = 'started'
+            message = 'Lunch break started'
         
         try:
             db.session.commit()
             emit_analytics_update(app.extensions['socketio'])
             return jsonify({
                 'status': 'success',
-                'message': f'Lunch break {lunch_break_status}',
-                'lunch_break_status': lunch_break_status,
-                'lunch_break_duration': str(lunch_break_duration) if lunch_break_duration else None
+                'message': message,
+                'lunch_break_status': lunch_break_status
             }), 200
         except Exception as e:
             db.session.rollback()
