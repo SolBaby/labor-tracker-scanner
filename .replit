@@ -59,7 +59,7 @@ agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "flask db migrate -m 'Add BathroomBreak model and update TimeLog'"
+args = "flask db migrate -m 'Remove bathroom break columns from TimeLog and create BathroomBreak model'"
 
 [[workflows.workflow]]
 name = "Apply Migration"
