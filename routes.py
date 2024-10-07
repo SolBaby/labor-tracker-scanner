@@ -116,25 +116,30 @@ def init_routes(app):
             emit_analytics_update(app.extensions['socketio'])
             
             sms_status = 'not_sent'
-            if twilio_client and employee.phone_number and employee.phone_number != twilio_phone_number:
-                try:
-                    message = twilio_client.messages.create(
-                        body=f"Employee {employee.name} (ID: {employee.employee_id}) has checked out at {time_log.end_time.strftime('%Y-%m-%d %H:%M:%S')}",
-                        from_=twilio_phone_number,
-                        to=employee.phone_number
-                    )
-                    sms_status = 'sent'
-                except TwilioRestException as e:
-                    print(f"Error sending SMS: {str(e)}")
-                    sms_status = 'failed'
+            if twilio_client and employee.phone_number:
+                if employee.phone_number != twilio_phone_number:
+                    try:
+                        message = twilio_client.messages.create(
+                            body=f"Employee {employee.name} (ID: {employee.employee_id}) has checked out at {time_log.end_time.strftime('%Y-%m-%d %H:%M:%S')}",
+                            from_=twilio_phone_number,
+                            to=employee.phone_number
+                        )
+                        sms_status = 'sent'
+                    except TwilioRestException as e:
+                        print(f"Error sending SMS: {str(e)}")
+                        sms_status = 'failed'
+                else:
+                    sms_status = 'skipped'
             
             response_message = 'Check-out successful'
             if sms_status == 'sent':
                 response_message += ' and SMS notification sent'
             elif sms_status == 'failed':
                 response_message += ', but SMS notification failed'
+            elif sms_status == 'skipped':
+                response_message += ' (SMS notification skipped - employee number matches Twilio number)'
             elif sms_status == 'not_sent':
-                response_message += ' (SMS notification not sent)'
+                response_message += ' (SMS notification not sent - Twilio not configured or employee has no phone number)'
             
             return jsonify({'status': 'success', 'message': response_message}), 200
         except Exception as e:
