@@ -32,7 +32,6 @@ function renderReports(data) {
             <td>${record.lunch_break_start ? new Date(record.lunch_break_start).toLocaleString() : 'N/A'}</td>
             <td>${record.lunch_break_end ? new Date(record.lunch_break_end).toLocaleString() : 'N/A'}</td>
             <td>${record.bathroom_break_duration !== null ? record.bathroom_break_duration.toFixed(2) + ' minutes' : 'N/A'}</td>
-            <td>${record.cumulative_bathroom_break_duration.toFixed(2)} minutes</td>
             <td>${record.total_hours} hours, ${record.total_minutes} minutes</td>
             <td>
                 <button class="btn edit-btn" data-id="${record.id}">Edit</button>
@@ -159,7 +158,7 @@ function editReport(id) {
     document.getElementById('edit-task-name').value = row.cells[2].textContent;
     document.getElementById('edit-task-location').value = row.cells[3].textContent;
     
-    const timeParts = row.cells[10].textContent.split(',');
+    const timeParts = row.cells[9].textContent.split(',');
     const hours = parseInt(timeParts[0]);
     const minutes = parseInt(timeParts[1]);
     
