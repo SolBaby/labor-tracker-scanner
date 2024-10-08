@@ -134,18 +134,28 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/api/employee/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, employee_id: employeeId, task_id: taskId, phone_number: phoneNumber }),
+            body: JSON.stringify({ 
+                name, 
+                employee_id: employeeId, 
+                task_id: taskId, 
+                phone_number: phoneNumber,
+                department: 'Unassigned' // Add a default department
+            }),
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
                 closeModal();
                 searchEmployees();
+                showNotification('Employee added successfully', 'success');
             } else {
-                alert(data.message);
+                showNotification(data.message, 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while adding the employee', 'error');
+        });
     }
 
     function updateEmployee(id, name, employeeId, taskId, phoneNumber) {
@@ -159,11 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.status === 'success') {
                 closeModal();
                 searchEmployees();
+                showNotification('Employee updated successfully', 'success');
             } else {
-                alert(data.message);
+                showNotification(data.message, 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating the employee', 'error');
+        });
     }
 
     function deleteEmployee(id) {
