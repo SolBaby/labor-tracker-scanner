@@ -16,14 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentSort = { field: 'id', order: 'asc' };
     const itemsPerPage = 10;
 
-    function showModal(title, id = '', name = '', employeeId = '', taskId = '', phoneNumber = '', department = '') {
+    function showModal(title, id = '', name = '', employeeId = '', taskId = '', phoneNumber = '') {
         document.getElementById('modal-title').textContent = title;
         document.getElementById('employee-id').value = id;
         document.getElementById('employee-name').value = name;
         document.getElementById('employee-id-input').value = employeeId;
         document.getElementById('employee-task-id').value = taskId;
         document.getElementById('employee-phone').value = phoneNumber;
-        document.getElementById('employee-department').value = department;
         employeeModal.style.display = 'block';
     }
 
@@ -41,12 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const employeeId = document.getElementById('employee-id-input').value;
         const taskId = document.getElementById('employee-task-id').value;
         const phoneNumber = document.getElementById('employee-phone').value;
-        const department = document.getElementById('employee-department').value;
 
         if (id) {
-            updateEmployee(id, name, employeeId, taskId, phoneNumber, department);
+            updateEmployee(id, name, employeeId, taskId, phoneNumber);
         } else {
-            addEmployee(name, employeeId, taskId, phoneNumber, department);
+            addEmployee(name, employeeId, taskId, phoneNumber);
         }
     });
 
@@ -67,8 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const employeeId = row.cells[2].textContent;
             const taskId = row.cells[3].textContent;
             const phoneNumber = row.cells[4].textContent;
-            const department = row.cells[5].textContent;
-            showModal('Edit Employee', id, name, employeeId, taskId, phoneNumber, department);
+            showModal('Edit Employee', id, name, employeeId, taskId, phoneNumber);
         } else if (target.classList.contains('delete-btn')) {
             if (confirm('Are you sure you want to delete this employee?')) {
                 deleteEmployee(target.dataset.id);
@@ -111,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${employee.employee_id}</td>
                 <td>${employee.task_id}</td>
                 <td>${employee.phone_number}</td>
-                <td>${employee.department}</td>
                 <td>
                     <button class="btn edit-btn" data-id="${employee.id}">Edit</button>
                     <button class="btn delete-btn" data-id="${employee.id}">Delete</button>
@@ -134,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchEmployees();
     }
 
-    function addEmployee(name, employeeId, taskId, phoneNumber, department) {
+    function addEmployee(name, employeeId, taskId, phoneNumber) {
         fetch('/api/employee/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -143,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 employee_id: employeeId, 
                 task_id: taskId, 
                 phone_number: phoneNumber,
-                department
+                department: 'Unassigned' // Add a default department
             }),
         })
         .then(response => response.json())
@@ -162,11 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateEmployee(id, name, employeeId, taskId, phoneNumber, department) {
+    function updateEmployee(id, name, employeeId, taskId, phoneNumber) {
         fetch(`/api/employee/update/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, employee_id: employeeId, task_id: taskId, phone_number: phoneNumber, department }),
+            body: JSON.stringify({ name, employee_id: employeeId, task_id: taskId, phone_number: phoneNumber }),
         })
         .then(response => response.json())
         .then(data => {

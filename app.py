@@ -22,8 +22,8 @@ def create_app():
     socketio.init_app(app)
 
     with app.app_context():
-        from routes import init_routes
-        app = init_routes(app, db)
+        import routes
+        routes.init_routes(app)
 
         from api import init_api
         init_api(app)
