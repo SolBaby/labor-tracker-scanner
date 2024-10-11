@@ -47,11 +47,11 @@
             </div>
             <nav>
                 <ul>
-                    <li><a href="{{ url_for('index') }}">Home</a></li>
-                    <li><a href="{{ url_for('employee_management') }}">Employees</a></li>
-                    <li><a href="{{ url_for('task_management') }}">Tasks</a></li>
-                    <li><a href="{{ url_for('reports') }}">Reports</a></li>
-                    <li><a href="{{ url_for('analytics_dashboard') }}">Analytics</a></li>
+                    <li><a href="{{ url_for('routes.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('routes.employee_management') }}">Employees</a></li>
+                    <li><a href="{{ url_for('routes.task_management') }}">Tasks</a></li>
+                    <li><a href="{{ url_for('routes.reports') }}">Reports</a></li>
+                    <li><a href="{{ url_for('routes.analytics_dashboard') }}">Analytics</a></li>
                 </ul>
             </nav>
         </div>
@@ -62,10 +62,6 @@
         {% endblock %}
     </div>
 
-   <!--<div class="disclaimer">
-        <p>Disclaimer: This website is currently in its pilot stage (beta mode). Features and functionalities are subject to change as we continue to improve the platform. We appreciate your feedback and patience during this testing phase. Created by Geo T.</p 
-    </div>
--->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
